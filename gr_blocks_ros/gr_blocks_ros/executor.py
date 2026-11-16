@@ -102,11 +102,17 @@ class Executor:
     # ---- actions -----------------------------------------------------------------------------------------------
     def do(self, text, agent):
         """Run one operator (symbolic check first, then physical). Returns True when the physical state agrees."""
+        before = self.poses()
         info = self.world.apply_text(text, agent)  # raises IllegalAction before anything moves
         ok = self._ring(info) if agent == "R_ing" else self._human(info)
         self.arm.settle(1.0)
         same, phys, want = self.consistent()
         self.log.append((agent, text, ok, same))
+        after = self.poses()
+        bumped = {l: round(1000 * float(np.linalg.norm(np.array(after[l]) - np.array(before[l]))), 1)
+                  for l in LETTERS if l != info["block"] and np.linalg.norm(np.array(after[l]) - np.array(before[l])) > 0.005}
+        if bumped:
+            print(f"  note: other cubes moved (mm) by {agent} {text}: {bumped}")
         if not (ok and same):
             print(f"  !! {agent} {text}: motion ok={ok}, physical==symbolic: {same}")
             if not same:
