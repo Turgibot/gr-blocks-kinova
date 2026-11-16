@@ -25,6 +25,8 @@ setup(
             "move_named = gr_blocks_ros.move_named:main",
             "world_state = gr_blocks_ros.world_state:main",
             "gripper_gap = gr_blocks_ros.gripper_gap:main",
+            "pick_test = gr_blocks_ros.pick_test:main",
+            "place_test = gr_blocks_ros.place_test:main",
             "make_world = gr_blocks_ros.make_world:main",
         ],
     },
