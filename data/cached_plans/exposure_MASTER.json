@@ -1,0 +1,1010 @@
+{
+ "word": "MASTER",
+ "min_posterior": 0.01,
+ "variant": "eps3",
+ "t_join": 6,
+ "goal": [
+  "on(M,A)",
+  "on(A,S)",
+  "on(S,T)",
+  "on(T,E)",
+  "on(E,R)",
+  "ontable(R)"
+ ],
+ "G_hat": [
+  "on(E,R)",
+  "ontable(R)",
+  "on(T,E)",
+  "on(S,T)",
+  "on(A,S)"
+ ],
+ "start": {
+  "towers": [
+   [
+    "F",
+    "W",
+    "B",
+    "A"
+   ],
+   [
+    "L",
+    "S",
+    "M",
+    "O"
+   ],
+   [
+    "H",
+    "T",
+    "E",
+    "R"
+   ]
+  ],
+  "hands": {
+   "1": null,
+   "2": null
+  }
+ },
+ "steps": [
+  {
+   "step": 1,
+   "posterior_index": 0,
+   "posterior": {
+    "HER": 0.08333,
+    "OTHER": 0.08333,
+    "BOTHER": 0.08333,
+    "MOTHER": 0.08333,
+    "FATHER": 0.08333,
+    "LATHER": 0.08333,
+    "MASTER": 0.08333,
+    "FASTER": 0.08333,
+    "FOSTER": 0.08333,
+    "HATER": 0.08333,
+    "LATER": 0.08333,
+    "WATER": 0.08333
+   },
+   "live": [
+    "HER",
+    "OTHER",
+    "BOTHER",
+    "MOTHER",
+    "FATHER",
+    "LATHER",
+    "MASTER",
+    "FASTER",
+    "FOSTER",
+    "HATER",
+    "LATER",
+    "WATER"
+   ],
+   "n_live": 12,
+   "candidates": [
+    {
+     "x": "F",
+     "y": "W",
+     "fact": "on(F,W)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": false
+    },
+    {
+     "x": "L",
+     "y": "S",
+     "fact": "on(L,S)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": false
+    },
+    {
+     "x": "H",
+     "y": "T",
+     "fact": "on(H,T)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER"
+     ],
+     "u": 6,
+     "busy": true
+    }
+   ],
+   "chosen": "F",
+   "why": "safe, and useful for 12 of 12 live goals (the most)",
+   "ed": "unstack H T",
+   "ing": "unstack F W",
+   "collision": null,
+   "replan": null,
+   "world": {
+    "towers": [
+     [
+      "W",
+      "B",
+      "A"
+     ],
+     [
+      "L",
+      "S",
+      "M",
+      "O"
+     ],
+     [
+      "T",
+      "E",
+      "R"
+     ]
+    ],
+    "hands": {
+     "1": "H",
+     "2": "F"
+    }
+   }
+  },
+  {
+   "step": 2,
+   "posterior_index": 1,
+   "posterior": {
+    "HER": 0.08333,
+    "OTHER": 0.08333,
+    "BOTHER": 0.08333,
+    "MOTHER": 0.08333,
+    "FATHER": 0.08333,
+    "LATHER": 0.08333,
+    "MASTER": 0.08333,
+    "FASTER": 0.08333,
+    "FOSTER": 0.08333,
+    "HATER": 0.08333,
+    "LATER": 0.08333,
+    "WATER": 0.08333
+   },
+   "live": [
+    "HER",
+    "OTHER",
+    "BOTHER",
+    "MOTHER",
+    "FATHER",
+    "LATHER",
+    "MASTER",
+    "FASTER",
+    "FOSTER",
+    "HATER",
+    "LATER",
+    "WATER"
+   ],
+   "n_live": 12,
+   "candidates": [
+    {
+     "x": "W",
+     "y": "B",
+     "fact": "on(W,B)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": false
+    },
+    {
+     "x": "L",
+     "y": "S",
+     "fact": "on(L,S)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": false
+    },
+    {
+     "x": "T",
+     "y": "E",
+     "fact": "on(T,E)",
+     "safe": false,
+     "wanted_by": [
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "useful_for": [],
+     "u": 0,
+     "busy": false
+    }
+   ],
+   "chosen": null,
+   "why": "R_ing is holding F: second half of the exposure move",
+   "ed": "put-down H",
+   "ing": "put-down F",
+   "collision": null,
+   "replan": null,
+   "world": {
+    "towers": [
+     [
+      "W",
+      "B",
+      "A"
+     ],
+     [
+      "F"
+     ],
+     [
+      "H"
+     ],
+     [
+      "L",
+      "S",
+      "M",
+      "O"
+     ],
+     [
+      "T",
+      "E",
+      "R"
+     ]
+    ],
+    "hands": {
+     "1": null,
+     "2": null
+    }
+   }
+  },
+  {
+   "step": 3,
+   "posterior_index": 2,
+   "posterior": {
+    "HER": 0.08333,
+    "OTHER": 0.08333,
+    "BOTHER": 0.08333,
+    "MOTHER": 0.08333,
+    "FATHER": 0.08333,
+    "LATHER": 0.08333,
+    "MASTER": 0.08333,
+    "FASTER": 0.08333,
+    "FOSTER": 0.08333,
+    "HATER": 0.08333,
+    "LATER": 0.08333,
+    "WATER": 0.08333
+   },
+   "live": [
+    "HER",
+    "OTHER",
+    "BOTHER",
+    "MOTHER",
+    "FATHER",
+    "LATHER",
+    "MASTER",
+    "FASTER",
+    "FOSTER",
+    "HATER",
+    "LATER",
+    "WATER"
+   ],
+   "n_live": 12,
+   "candidates": [
+    {
+     "x": "W",
+     "y": "B",
+     "fact": "on(W,B)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": false
+    },
+    {
+     "x": "L",
+     "y": "S",
+     "fact": "on(L,S)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": true
+    },
+    {
+     "x": "T",
+     "y": "E",
+     "fact": "on(T,E)",
+     "safe": false,
+     "wanted_by": [
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "useful_for": [],
+     "u": 0,
+     "busy": false
+    }
+   ],
+   "chosen": "W",
+   "why": "safe, and useful for 12 of 12 live goals (the most)",
+   "ed": "unstack L S",
+   "ing": "unstack W B",
+   "collision": null,
+   "replan": null,
+   "world": {
+    "towers": [
+     [
+      "B",
+      "A"
+     ],
+     [
+      "F"
+     ],
+     [
+      "H"
+     ],
+     [
+      "S",
+      "M",
+      "O"
+     ],
+     [
+      "T",
+      "E",
+      "R"
+     ]
+    ],
+    "hands": {
+     "1": "L",
+     "2": "W"
+    }
+   }
+  },
+  {
+   "step": 4,
+   "posterior_index": 3,
+   "posterior": {
+    "HER": 0.05299,
+    "OTHER": 0.09851,
+    "BOTHER": 0.09851,
+    "MOTHER": 0.09851,
+    "FATHER": 0.05299,
+    "LATHER": 0.09851,
+    "MASTER": 0.09851,
+    "FASTER": 0.09851,
+    "FOSTER": 0.09851,
+    "HATER": 0.05299,
+    "LATER": 0.09851,
+    "WATER": 0.05299
+   },
+   "live": [
+    "HER",
+    "OTHER",
+    "BOTHER",
+    "MOTHER",
+    "FATHER",
+    "LATHER",
+    "MASTER",
+    "FASTER",
+    "FOSTER",
+    "HATER",
+    "LATER",
+    "WATER"
+   ],
+   "n_live": 12,
+   "candidates": [
+    {
+     "x": "B",
+     "y": "A",
+     "fact": "on(B,A)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": false
+    },
+    {
+     "x": "S",
+     "y": "M",
+     "fact": "on(S,M)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": false
+    },
+    {
+     "x": "T",
+     "y": "E",
+     "fact": "on(T,E)",
+     "safe": false,
+     "wanted_by": [
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "useful_for": [],
+     "u": 0,
+     "busy": false
+    }
+   ],
+   "chosen": null,
+   "why": "R_ing is holding W: second half of the exposure move",
+   "ed": "put-down L",
+   "ing": "put-down W",
+   "collision": null,
+   "replan": null,
+   "world": {
+    "towers": [
+     [
+      "B",
+      "A"
+     ],
+     [
+      "F"
+     ],
+     [
+      "H"
+     ],
+     [
+      "L"
+     ],
+     [
+      "S",
+      "M",
+      "O"
+     ],
+     [
+      "T",
+      "E",
+      "R"
+     ],
+     [
+      "W"
+     ]
+    ],
+    "hands": {
+     "1": null,
+     "2": null
+    }
+   }
+  },
+  {
+   "step": 5,
+   "posterior_index": 4,
+   "posterior": {
+    "HER": 0.02226,
+    "OTHER": 0.13595,
+    "BOTHER": 0.13595,
+    "MOTHER": 0.13595,
+    "FATHER": 0.03241,
+    "LATHER": 0.03241,
+    "MASTER": 0.13595,
+    "FASTER": 0.13595,
+    "FOSTER": 0.13595,
+    "HATER": 0.03241,
+    "LATER": 0.03241,
+    "WATER": 0.03241
+   },
+   "live": [
+    "HER",
+    "OTHER",
+    "BOTHER",
+    "MOTHER",
+    "FATHER",
+    "LATHER",
+    "MASTER",
+    "FASTER",
+    "FOSTER",
+    "HATER",
+    "LATER",
+    "WATER"
+   ],
+   "n_live": 12,
+   "candidates": [
+    {
+     "x": "B",
+     "y": "A",
+     "fact": "on(B,A)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": false
+    },
+    {
+     "x": "S",
+     "y": "M",
+     "fact": "on(S,M)",
+     "safe": true,
+     "wanted_by": [],
+     "useful_for": [
+      "HER",
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 12,
+     "busy": true
+    },
+    {
+     "x": "T",
+     "y": "E",
+     "fact": "on(T,E)",
+     "safe": false,
+     "wanted_by": [
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "useful_for": [],
+     "u": 0,
+     "busy": false
+    }
+   ],
+   "chosen": "B",
+   "why": "safe, and useful for 12 of 12 live goals (the most)",
+   "ed": "unstack S M",
+   "ing": "unstack B A",
+   "collision": null,
+   "replan": null,
+   "world": {
+    "towers": [
+     [
+      "A"
+     ],
+     [
+      "F"
+     ],
+     [
+      "H"
+     ],
+     [
+      "L"
+     ],
+     [
+      "M",
+      "O"
+     ],
+     [
+      "T",
+      "E",
+      "R"
+     ],
+     [
+      "W"
+     ]
+    ],
+    "hands": {
+     "1": "S",
+     "2": "B"
+    }
+   }
+  },
+  {
+   "step": 6,
+   "posterior_index": 5,
+   "posterior": {
+    "HER": 0.00545,
+    "OTHER": 0.15362,
+    "BOTHER": 0.15362,
+    "MOTHER": 0.15362,
+    "FATHER": 0.01457,
+    "LATHER": 0.01457,
+    "MASTER": 0.15362,
+    "FASTER": 0.15362,
+    "FOSTER": 0.15362,
+    "HATER": 0.01457,
+    "LATER": 0.01457,
+    "WATER": 0.01457
+   },
+   "live": [
+    "OTHER",
+    "BOTHER",
+    "MOTHER",
+    "FATHER",
+    "LATHER",
+    "MASTER",
+    "FASTER",
+    "FOSTER",
+    "HATER",
+    "LATER",
+    "WATER"
+   ],
+   "n_live": 11,
+   "candidates": [
+    {
+     "x": "M",
+     "y": "O",
+     "fact": "on(M,O)",
+     "safe": false,
+     "wanted_by": [
+      "MOTHER"
+     ],
+     "useful_for": [
+      "OTHER",
+      "BOTHER",
+      "MOTHER",
+      "FATHER",
+      "LATHER",
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "u": 11,
+     "busy": false
+    },
+    {
+     "x": "T",
+     "y": "E",
+     "fact": "on(T,E)",
+     "safe": false,
+     "wanted_by": [
+      "MASTER",
+      "FASTER",
+      "FOSTER",
+      "HATER",
+      "LATER",
+      "WATER"
+     ],
+     "useful_for": [],
+     "u": 0,
+     "busy": true
+    }
+   ],
+   "chosen": null,
+   "why": "R_ing is holding B: second half of the exposure move",
+   "ed": "stack S T",
+   "ing": "put-down B",
+   "collision": null,
+   "replan": null,
+   "world": {
+    "towers": [
+     [
+      "A"
+     ],
+     [
+      "B"
+     ],
+     [
+      "F"
+     ],
+     [
+      "H"
+     ],
+     [
+      "L"
+     ],
+     [
+      "M",
+      "O"
+     ],
+     [
+      "S",
+      "T",
+      "E",
+      "R"
+     ],
+     [
+      "W"
+     ]
+    ],
+    "hands": {
+     "1": null,
+     "2": null
+    }
+   }
+  }
+ ],
+ "finished_at": null,
+ "paper": {
+  "alone": 16,
+  "joint": 12,
+  "C": 10,
+  "D": 6,
+  "H": 4
+ },
+ "C": 4,
+ "B": 2,
+ "pi_ring": [
+  "unstack M O",
+  "stack M B"
+ ],
+ "D": 4,
+ "H": 0,
+ "joint_steps": [
+  {
+   "comps": {
+    "1": "pick-up A",
+    "2": "unstack M O"
+   },
+   "world": {
+    "towers": [
+     [
+      "B"
+     ],
+     [
+      "F"
+     ],
+     [
+      "H"
+     ],
+     [
+      "L"
+     ],
+     [
+      "O"
+     ],
+     [
+      "S",
+      "T",
+      "E",
+      "R"
+     ],
+     [
+      "W"
+     ]
+    ],
+    "hands": {
+     "1": "A",
+     "2": "M"
+    }
+   }
+  },
+  {
+   "comps": {
+    "1": "stack A S",
+    "2": "stack M B"
+   },
+   "world": {
+    "towers": [
+     [
+      "M",
+      "B"
+     ],
+     [
+      "F"
+     ],
+     [
+      "H"
+     ],
+     [
+      "L"
+     ],
+     [
+      "O"
+     ],
+     [
+      "A",
+      "S",
+      "T",
+      "E",
+      "R"
+     ],
+     [
+      "W"
+     ]
+    ],
+    "hands": {
+     "1": null,
+     "2": null
+    }
+   }
+  },
+  {
+   "comps": {
+    "1": "unstack M B",
+    "2": null
+   },
+   "world": {
+    "towers": [
+     [
+      "B"
+     ],
+     [
+      "F"
+     ],
+     [
+      "H"
+     ],
+     [
+      "L"
+     ],
+     [
+      "O"
+     ],
+     [
+      "A",
+      "S",
+      "T",
+      "E",
+      "R"
+     ],
+     [
+      "W"
+     ]
+    ],
+    "hands": {
+     "1": "M",
+     "2": null
+    }
+   }
+  },
+  {
+   "comps": {
+    "1": "stack M A",
+    "2": null
+   },
+   "world": {
+    "towers": [
+     [
+      "B"
+     ],
+     [
+      "F"
+     ],
+     [
+      "H"
+     ],
+     [
+      "L"
+     ],
+     [
+      "O"
+     ],
+     [
+      "M",
+      "A",
+      "S",
+      "T",
+      "E",
+      "R"
+     ],
+     [
+      "W"
+     ]
+    ],
+    "hands": {
+     "1": null,
+     "2": null
+    }
+   }
+  }
+ ],
+ "completion": 10
+}

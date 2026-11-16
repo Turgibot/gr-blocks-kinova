@@ -1,0 +1,1653 @@
+{
+ "word": "MASTER",
+ "t_join": 6,
+ "variant": "eps3",
+ "start": {
+  "towers": [
+   [
+    "F",
+    "W",
+    "B",
+    "A"
+   ],
+   [
+    "H"
+   ],
+   [
+    "L"
+   ],
+   [
+    "M",
+    "O"
+   ],
+   [
+    "S",
+    "T",
+    "E",
+    "R"
+   ]
+  ],
+  "hands": {
+   "1": null,
+   "2": null
+  }
+ },
+ "G_hat": [
+  "on(E,R)",
+  "ontable(R)",
+  "on(T,E)",
+  "on(S,T)",
+  "on(A,S)"
+ ],
+ "goal": [
+  "on(M,A)",
+  "on(A,S)",
+  "on(S,T)",
+  "on(T,E)",
+  "on(E,R)",
+  "ontable(R)"
+ ],
+ "pi_ring": [
+  "unstack W B",
+  "stack W L",
+  "pick-up A",
+  "stack A S"
+ ],
+ "alone_Ghat": {
+  "cost": 8,
+  "steps": [
+   {
+    "name": "one_unstack_arm1",
+    "args": [
+     "F",
+     "W"
+    ],
+    "comps": {
+     "1": "unstack F W",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "W",
+       "B",
+       "A"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "F",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_put-down_arm1",
+    "args": [
+     "F"
+    ],
+    "comps": {
+     "1": "put-down F",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "W",
+       "B",
+       "A"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_unstack_arm1",
+    "args": [
+     "W",
+     "B"
+    ],
+    "comps": {
+     "1": "unstack W B",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "W",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_put-down_arm1",
+    "args": [
+     "W"
+    ],
+    "comps": {
+     "1": "put-down W",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_unstack_arm1",
+    "args": [
+     "B",
+     "A"
+    ],
+    "comps": {
+     "1": "unstack B A",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "A"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": "B",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_put-down_arm1",
+    "args": [
+     "B"
+    ],
+    "comps": {
+     "1": "put-down B",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "A"
+      ],
+      [
+       "B"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_pick-up_arm1",
+    "args": [
+     "A"
+    ],
+    "comps": {
+     "1": "pick-up A",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": "A",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_stack_arm1",
+    "args": [
+     "A",
+     "S"
+    ],
+    "comps": {
+     "1": "stack A S",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "A",
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   }
+  ],
+  "start": {
+   "towers": [
+    [
+     "F",
+     "W",
+     "B",
+     "A"
+    ],
+    [
+     "H"
+    ],
+    [
+     "L"
+    ],
+    [
+     "M",
+     "O"
+    ],
+    [
+     "S",
+     "T",
+     "E",
+     "R"
+    ]
+   ],
+   "hands": {
+    "1": null,
+    "2": null
+   }
+  }
+ },
+ "joint_Ghat": {
+  "cost": 4,
+  "steps": [
+   {
+    "name": "pairup_12",
+    "args": [
+     "F",
+     "W",
+     "B"
+    ],
+    "comps": {
+     "1": "unstack F W",
+     "2": "unstack W B"
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "F",
+      "2": "W"
+     }
+    }
+   },
+   {
+    "name": "par_stack_stack",
+    "args": [
+     "F",
+     "H",
+     "W",
+     "L"
+    ],
+    "comps": {
+     "1": "stack F H",
+     "2": "stack W L"
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "pairup_table_12",
+    "args": [
+     "B",
+     "A"
+    ],
+    "comps": {
+     "1": "unstack B A",
+     "2": "pick-up A"
+    },
+    "world": {
+     "towers": [
+      [
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "B",
+      "2": "A"
+     }
+    }
+   },
+   {
+    "name": "par_stack_stack",
+    "args": [
+     "B",
+     "F",
+     "A",
+     "S"
+    ],
+    "comps": {
+     "1": "stack B F",
+     "2": "stack A S"
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "A",
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   }
+  ],
+  "start": {
+   "towers": [
+    [
+     "F",
+     "W",
+     "B",
+     "A"
+    ],
+    [
+     "H"
+    ],
+    [
+     "L"
+    ],
+    [
+     "M",
+     "O"
+    ],
+    [
+     "S",
+     "T",
+     "E",
+     "R"
+    ]
+   ],
+   "hands": {
+    "1": null,
+    "2": null
+   }
+  }
+ },
+ "alone_G": {
+  "cost": 10,
+  "steps": [
+   {
+    "name": "one_unstack_arm1",
+    "args": [
+     "F",
+     "W"
+    ],
+    "comps": {
+     "1": "unstack F W",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "W",
+       "B",
+       "A"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "F",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_put-down_arm1",
+    "args": [
+     "F"
+    ],
+    "comps": {
+     "1": "put-down F",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "W",
+       "B",
+       "A"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_unstack_arm1",
+    "args": [
+     "W",
+     "B"
+    ],
+    "comps": {
+     "1": "unstack W B",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "W",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_put-down_arm1",
+    "args": [
+     "W"
+    ],
+    "comps": {
+     "1": "put-down W",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_unstack_arm1",
+    "args": [
+     "B",
+     "A"
+    ],
+    "comps": {
+     "1": "unstack B A",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "A"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": "B",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_put-down_arm1",
+    "args": [
+     "B"
+    ],
+    "comps": {
+     "1": "put-down B",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "A"
+      ],
+      [
+       "B"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_pick-up_arm1",
+    "args": [
+     "A"
+    ],
+    "comps": {
+     "1": "pick-up A",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": "A",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_stack_arm1",
+    "args": [
+     "A",
+     "S"
+    ],
+    "comps": {
+     "1": "stack A S",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "A",
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_unstack_arm1",
+    "args": [
+     "M",
+     "O"
+    ],
+    "comps": {
+     "1": "unstack M O",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "O"
+      ],
+      [
+       "A",
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": "M",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_stack_arm1",
+    "args": [
+     "M",
+     "A"
+    ],
+    "comps": {
+     "1": "stack M A",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B"
+      ],
+      [
+       "F"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "O"
+      ],
+      [
+       "M",
+       "A",
+       "S",
+       "T",
+       "E",
+       "R"
+      ],
+      [
+       "W"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   }
+  ],
+  "start": {
+   "towers": [
+    [
+     "F",
+     "W",
+     "B",
+     "A"
+    ],
+    [
+     "H"
+    ],
+    [
+     "L"
+    ],
+    [
+     "M",
+     "O"
+    ],
+    [
+     "S",
+     "T",
+     "E",
+     "R"
+    ]
+   ],
+   "hands": {
+    "1": null,
+    "2": null
+   }
+  }
+ },
+ "response_G": {
+  "cost": 6,
+  "steps": [
+   {
+    "name": "pairup_12",
+    "args": [
+     "F",
+     "W",
+     "B"
+    ],
+    "comps": {
+     "1": "unstack F W",
+     "2": "unstack W B"
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "F",
+      "2": "W"
+     }
+    }
+   },
+   {
+    "name": "par_stack_stack",
+    "args": [
+     "F",
+     "H",
+     "W",
+     "L"
+    ],
+    "comps": {
+     "1": "stack F H",
+     "2": "stack W L"
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "pairup_table_12",
+    "args": [
+     "B",
+     "A"
+    ],
+    "comps": {
+     "1": "unstack B A",
+     "2": "pick-up A"
+    },
+    "world": {
+     "towers": [
+      [
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "B",
+      "2": "A"
+     }
+    }
+   },
+   {
+    "name": "par_stack_stack",
+    "args": [
+     "B",
+     "F",
+     "A",
+     "S"
+    ],
+    "comps": {
+     "1": "stack B F",
+     "2": "stack A S"
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "A",
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_unstack_arm1",
+    "args": [
+     "M",
+     "O"
+    ],
+    "comps": {
+     "1": "unstack M O",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "O"
+      ],
+      [
+       "A",
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "M",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_stack_arm1",
+    "args": [
+     "M",
+     "A"
+    ],
+    "comps": {
+     "1": "stack M A",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "O"
+      ],
+      [
+       "M",
+       "A",
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   }
+  ],
+  "start": {
+   "towers": [
+    [
+     "F",
+     "W",
+     "B",
+     "A"
+    ],
+    [
+     "H"
+    ],
+    [
+     "L"
+    ],
+    [
+     "M",
+     "O"
+    ],
+    [
+     "S",
+     "T",
+     "E",
+     "R"
+    ]
+   ],
+   "hands": {
+    "1": null,
+    "2": null
+   }
+  }
+ },
+ "joint_free_G": {
+  "cost": 6,
+  "steps": [
+   {
+    "name": "pairup_12",
+    "args": [
+     "F",
+     "W",
+     "B"
+    ],
+    "comps": {
+     "1": "unstack F W",
+     "2": "unstack W B"
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "H"
+      ],
+      [
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "F",
+      "2": "W"
+     }
+    }
+   },
+   {
+    "name": "par_stack_stack",
+    "args": [
+     "F",
+     "H",
+     "W",
+     "L"
+    ],
+    "comps": {
+     "1": "stack F H",
+     "2": "stack W L"
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "A"
+      ],
+      [
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "one_unstack_arm1",
+    "args": [
+     "B",
+     "A"
+    ],
+    "comps": {
+     "1": "unstack B A",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "A"
+      ],
+      [
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "M",
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "B",
+      "2": null
+     }
+    }
+   },
+   {
+    "name": "par_stack_unstack",
+    "args": [
+     "B",
+     "F",
+     "M",
+     "O"
+    ],
+    "comps": {
+     "1": "stack B F",
+     "2": "unstack M O"
+    },
+    "world": {
+     "towers": [
+      [
+       "A"
+      ],
+      [
+       "B",
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": "M"
+     }
+    }
+   },
+   {
+    "name": "one_pick-up_arm1",
+    "args": [
+     "A"
+    ],
+    "comps": {
+     "1": "pick-up A",
+     "2": null
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "O"
+      ],
+      [
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": "A",
+      "2": "M"
+     }
+    }
+   },
+   {
+    "name": "pairdown_21",
+    "args": [
+     "M",
+     "A",
+     "S"
+    ],
+    "comps": {
+     "1": "stack A S",
+     "2": "stack M A"
+    },
+    "world": {
+     "towers": [
+      [
+       "B",
+       "F",
+       "H"
+      ],
+      [
+       "W",
+       "L"
+      ],
+      [
+       "O"
+      ],
+      [
+       "M",
+       "A",
+       "S",
+       "T",
+       "E",
+       "R"
+      ]
+     ],
+     "hands": {
+      "1": null,
+      "2": null
+     }
+    }
+   }
+  ],
+  "start": {
+   "towers": [
+    [
+     "F",
+     "W",
+     "B",
+     "A"
+    ],
+    [
+     "H"
+    ],
+    [
+     "L"
+    ],
+    [
+     "M",
+     "O"
+    ],
+    [
+     "S",
+     "T",
+     "E",
+     "R"
+    ]
+   ],
+   "hands": {
+    "1": null,
+    "2": null
+   }
+  }
+ },
+ "H": 4
+}
