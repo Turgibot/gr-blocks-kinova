@@ -377,11 +377,16 @@ class Arm(Node):
         up = np.array([0, 0, 1.0])
         grasp_ee = self.ee_for_tcp(goal_center + offset, q)
         self._log_offset("start of place", letter, offset)
-        if not self.move_to(grasp_ee + up * hover, q, vel=vel):
-            return False
-        self._log_offset("above target", letter, offset)
-        if not self.cartesian([grasp_ee], q):
-            return False
+        for attempt in range(3):  # a configuration that cannot finish the vertical descent: restart from Home
+            if (self.move_to(grasp_ee + up * hover, q, vel=vel)
+                    and self.cartesian([grasp_ee + up * 0.012], q)  # collision-checked down to 12 mm above the support ...
+                    and self.cartesian([grasp_ee], q, avoid_collisions=False)):  # ... then the last 12 mm on purpose
+                break
+            if attempt == 2:
+                return False
+            self.get_logger().warn(f"approach to the place position failed (attempt {attempt + 1}/3), restarting from Home")
+            if not self.go_named("Home"):
+                return False
         self._log_offset("at target (before release)", letter, offset)
         if self.rigid:
             self._gz_weld("d", letter)
@@ -393,7 +398,7 @@ class Arm(Node):
         self.settle(1.0)
         err = self.block(letter) - goal_center
         self.get_logger().info(f"cube centre minus goal after release (mm): {np.round(1000 * err, 1)}")
-        ok = self.cartesian([grasp_ee + up * hover], q)
+        ok = self.cartesian([grasp_ee + up * hover], q) or self.cartesian([grasp_ee + up * hover], q, avoid_collisions=False)
         self.settle(1.0)
         self.last_error = self.block(letter) - goal_center  # final, after the gripper has retreated
         return ok
