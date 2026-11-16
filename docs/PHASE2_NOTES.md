@@ -1,5 +1,7 @@
 # Phase 1-2 notes: Gazebo sim, MoveIt, first pick and place (Gen3 + Robotiq 2F-140)
 
+> Continued and partly superseded by `docs/PHASE3_NOTES.md` (rigid grasp in the sim, block world, replay, full loop).
+
 Written 2026-11-16 at the end of the first working session. Everything below was observed in headless Gazebo
 (Jazzy, gz-sim 8, bullet-featherstone); nothing has run on the real arm.
 
