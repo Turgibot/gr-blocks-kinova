@@ -5,6 +5,7 @@ Frames: everything is in `base_link` (see world_state.py). Gripper geometry is m
   * approach axis a = direction from the flange to the tcp, closing axis c = direction between the pads.
 A grasp orientation is chosen so that a points straight down and c points along base x (towers are spaced along y).
 """
+import os
 import time
 
 import numpy as np
@@ -12,8 +13,8 @@ import rclpy
 from control_msgs.action import ParallelGripperCommand
 from geometry_msgs.msg import Pose
 from moveit_msgs.action import ExecuteTrajectory, MoveGroup
-from moveit_msgs.msg import (AttachedCollisionObject, BoundingVolume, CollisionObject, Constraints, MoveItErrorCodes,
-                             OrientationConstraint, PlanningScene, PositionConstraint)
+from moveit_msgs.msg import (AttachedCollisionObject, BoundingVolume, CollisionObject, Constraints, JointConstraint,
+                             MoveItErrorCodes, OrientationConstraint, PlanningScene, PositionConstraint)
 from moveit_msgs.srv import ApplyPlanningScene, GetCartesianPath
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
@@ -24,6 +25,9 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 from shape_msgs.msg import SolidPrimitive
 from tf2_ros import Buffer, TransformListener
+
+from gr_blocks_ros.move_named import named_pose
+from gr_blocks_ros.sim_patches import LETTERS, attach_topic, detach_topic
 
 FRAME, EE = "base_link", "end_effector_link"
 LEFT, RIGHT = "left_inner_finger_pad", "right_inner_finger_pad"
@@ -57,6 +61,9 @@ class Arm(Node):
         self.held_pub = self.create_publisher(String, "/held_block", QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
         self.held = None
         self.last_error = None
+        self.rigid = False  # True: weld the cube to the gripper in Gazebo while it is held (sim launch rigid_grasp:=true)
+        self._gz = None
+        self._gz_pub = {}
 
     # ---- plumbing ---------------------------------------------------------------------------------------------
     def spin_until(self, fut, timeout):
@@ -82,6 +89,7 @@ class Arm(Node):
             rclpy.spin_once(self, timeout_sec=0.2)
         self._calibrate()
         self.clear_attached()
+        self._maybe_enable_rigid()
 
     def lookup(self, target, source=FRAME, timeout=3.0):
         t = self.buf.lookup_transform(source, target, rclpy.time.Time(), Duration(seconds=timeout)).transform
@@ -168,6 +176,32 @@ class Arm(Node):
             self.get_logger().warn(f"move_to attempt {k + 1}/{tries} failed, error {code}")
         return False
 
+    def move_joints(self, target, tries=3, vel=0.3):
+        """Plan + execute a joint-space move; target: {joint name: angle}."""
+        for k in range(tries):
+            goal = MoveGroup.Goal()
+            r = goal.request
+            r.group_name, r.pipeline_id = GROUP, "ompl"
+            r.num_planning_attempts, r.allowed_planning_time = 10, 5.0
+            r.max_velocity_scaling_factor = r.max_acceleration_scaling_factor = vel
+            c = Constraints()
+            for j, v in target.items():
+                c.joint_constraints.append(JointConstraint(joint_name=j, position=float(v), tolerance_above=0.01, tolerance_below=0.01, weight=1.0))
+            r.goal_constraints.append(c)
+            h = self.spin_until(self.move.send_goal_async(goal), 15.0)
+            if h is None or not h.accepted:
+                raise RuntimeError("move goal rejected")
+            res = self.spin_until(h.get_result_async(), 120.0)
+            if res and res.result.error_code.val == MoveItErrorCodes.SUCCESS:
+                self.settle(0.5)
+                return True
+            self.get_logger().warn(f"move_joints attempt {k + 1}/{tries} failed")
+        return False
+
+    def go_named(self, name="Home"):
+        """Move to an SRDF pose of the manipulator group (a known, reachable configuration to restart approaches from)."""
+        return self.move_joints(named_pose(name))
+
     def cartesian(self, ee_waypoints, quat, avoid_collisions=True, vel=0.1, min_fraction=0.99):
         """Straight-line moves of end_effector_link through the waypoints (fixed orientation)."""
         req = GetCartesianPath.Request()
@@ -247,6 +281,43 @@ class Arm(Node):
         self.held_pub.publish(String(data=""))  # world_state puts it back into the scene at its measured pose
         self.settle(0.5)
 
+    # ---- rigid grasp (sim only) ---------------------------------------------------------------------------------
+    def enable_rigid_grasp(self):
+        """Use the DetachableJoint plugins of the sim launch (rigid_grasp:=true): advertise every attach/detach topic."""
+        from gz.msgs10.empty_pb2 import Empty
+        from gz.transport13 import Node as GzNode
+        self._gz = GzNode()
+        self._empty = Empty
+        for l in LETTERS:
+            self._gz_pub[("a", l)] = self._gz.advertise(attach_topic(l), Empty)
+            self._gz_pub[("d", l)] = self._gz.advertise(detach_topic(l), Empty)
+        self.rigid = True
+        self.settle(1.0)  # let the subscribers in Gazebo discover the publishers
+        # The plugin welds every cube to the gripper when the robot is spawned (it starts 'attached'); the arm has not
+        # moved yet, so releasing them all now leaves the layout untouched.
+        for l in LETTERS:
+            self._gz_pub[("d", l)].publish(self._empty())
+        self.settle(1.0)
+
+    def _maybe_enable_rigid(self):
+        """Rigid grasp is on when the sim was launched with rigid_grasp:=true (its attach topics exist in Gazebo);
+        GR_RIGID_GRASP=0 / 1 forces it off / on."""
+        force = os.environ.get("GR_RIGID_GRASP")
+        if force == "0":
+            return
+        if force == "1":
+            return self.enable_rigid_grasp()
+        from gz.transport13 import Node as GzNode
+        probe = GzNode()
+        for _ in range(20):  # discovery needs a moment
+            if attach_topic("L") in probe.topic_list():
+                return self.enable_rigid_grasp()
+            self.settle(0.25)
+
+    def _gz_weld(self, kind, letter):
+        self._gz_pub[(kind, letter)].publish(self._empty())
+        self.settle(0.3)
+
     # ---- pick -------------------------------------------------------------------------------------------------
     def pick(self, letter, dz=0.0125, close=0.46, lift=0.10, hover=0.12):
         """Grasp the cube from above (grasp point dz above its centre so the 70 mm pads clear the cube below), lift it.
@@ -257,14 +328,30 @@ class Arm(Node):
         target = self.block(letter) + up * dz
         hover_ee = self.ee_for_tcp(target + up * hover, q)
         grasp_ee = self.ee_for_tcp(target, q)
-        self.gripper(0.0)
-        if not self.move_to(hover_ee, q):
-            return False
-        if not self.cartesian([grasp_ee], q):
-            return False
+        for attempt in range(3):  # some arm configurations cannot finish the vertical descent: restart from Home
+            self.gripper(0.0)
+            if self.move_to(hover_ee, q) and self.cartesian([grasp_ee], q):
+                break
+            if attempt == 2:
+                return False
+            self.get_logger().warn(f"approach to block_{letter} failed (attempt {attempt + 1}/3), restarting from Home")
+            if not self.go_named("Home"):
+                return False
         self.gripper(close, settle=1.5)
+        if self.rigid:
+            self._gz_weld("a", letter)
+            self.gripper(max(0.0, close - 0.08), settle=0.5)  # ease the pads off: the weld carries the cube, no contact fight
         self.attach(letter)
-        return self.cartesian([grasp_ee + up * lift], q, avoid_collisions=False)
+        z0 = self.block(letter)[2]
+        if not self.cartesian([grasp_ee + up * lift], q, avoid_collisions=False):
+            return False
+        self.settle(0.5)
+        rose = self.block(letter)[2] - z0
+        if rose < lift - 0.015:  # the cube did not come along: the grasp failed
+            self.get_logger().warn(f"pick of block_{letter}: cube rose {1000 * rose:.0f} mm of {1000 * lift:.0f} mm, grasp failed")
+            self.detach()
+            return False
+        return True
 
     # ---- place ------------------------------------------------------------------------------------------------
     def open_slowly(self, step=0.03, dt=0.1):
@@ -292,6 +379,8 @@ class Arm(Node):
         if not self.cartesian([grasp_ee], q):
             return False
         self._log_offset("at target (before release)", letter, offset)
+        if self.rigid:
+            self._gz_weld("d", letter)
         if slow_open:
             self.open_slowly()
         else:
