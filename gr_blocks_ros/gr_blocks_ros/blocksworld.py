@@ -10,6 +10,8 @@ before the arm moves.
 import json
 from pathlib import Path
 
+from gr_blocks_ros.paths import data_dir
+
 # Table slots (x, y) in the Gazebo world frame (the robot base is at the origin, +x forward, +y left), metres.
 # P2, P3, P4 hold the three start towers of blockworld.json (left, middle, right).
 SLOTS = {
@@ -19,7 +21,7 @@ SLOTS = {
 START_SLOTS = ["P2", "P3", "P4"]  # tower i of blockworld.json -> slot
 PUT_DOWN_ORDER = ["P1", "P5", "Q2", "Q1", "Q3", "P2", "P3", "P4"]  # preference for a new base on the table
 
-DATA = Path(__file__).resolve().parents[2] / "data"
+DATA = data_dir()
 
 
 def load_operators(path=None):
