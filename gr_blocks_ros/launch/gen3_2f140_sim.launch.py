@@ -158,7 +158,7 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("launch_rviz", default_value="false", description="Launch RViz?"),
-            DeclareLaunchArgument("world", default_value="empty.sdf", description="World file (name in worlds/, absolute path, or empty.sdf)."),
+            DeclareLaunchArgument("world", default_value="blocks_world.sdf", description="World file (name in worlds/, absolute path, or empty.sdf)."),
             DeclareLaunchArgument("view_cams", default_value="true", description="Bridge the fixed view_cam/top_cam images to ROS."),
             DeclareLaunchArgument("gui", default_value="false", description="Open the Gazebo GUI (server only if false)."),
             OpaqueFunction(function=launch_setup),

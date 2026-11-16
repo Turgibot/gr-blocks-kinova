@@ -21,7 +21,9 @@ setup(
     entry_points={
         "console_scripts": [
             "gripper_check = gr_blocks_ros.gripper_check:main",
+            "save_image = gr_blocks_ros.save_image:main",
             "gripper_gap = gr_blocks_ros.gripper_gap:main",
+            "make_world = gr_blocks_ros.make_world:main",
         ],
     },
 )
