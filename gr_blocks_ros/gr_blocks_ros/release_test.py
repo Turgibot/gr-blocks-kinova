@@ -26,6 +26,10 @@ def main():
     rclpy.init()
     arm = Arm()
     arm.wait_ready()
+    from gr_blocks_ros.blocksworld import START_SLOTS, World
+    from gr_blocks_ros.executor import Executor, HumanSim
+    start = World.from_towers([["H", "T", "E", "R"], ["L", "S", "M", "O"], ["F", "W", "B", "A"]], START_SLOTS)
+    print("layout reset:", Executor(arm, start, HumanSim()).reset_layout(), flush=True)
     rows = []
     with open(out, "w", newline="") as fh:
         w = csv.writer(fh)

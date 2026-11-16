@@ -14,6 +14,8 @@ TABLE_Z = 0.30                 # Gazebo world z of the table top (robot base hei
 HAND = (0.30, 0.43)            # where cubes held by R_ed wait (Gazebo world x, y)
 PICK_DZ = 0.015                # grasp point above the cube centre: pads (70 mm) clear the cube below / the table
 LETTERS = "ABEFHLMORSTW"
+# Parking spots used by reset_layout: two rows of six at the far end of the table, clear of every slot
+STAGING = [(0.72 + 0.08 * (i % 2), -0.19 + 0.076 * (i // 2)) for i in range(12)]
 
 
 class HumanSim:
@@ -61,6 +63,41 @@ class Executor:
         phys = self.physical_stacks()
         want = {s: st for s, st in self.world.stacks.items()}
         return phys == want, phys, want
+
+    # ---- test harness: set the table --------------------------------------------------------------------------
+    def wait_still(self, timeout=15.0, tol=0.0005):
+        """Wait until no cube moves (poses compared 0.6 s apart)."""
+        import time
+        end = time.monotonic() + timeout
+        prev = self.poses()
+        while time.monotonic() < end:
+            self.arm.settle(0.6)
+            cur = self.poses()
+            if max(np.linalg.norm(np.array(cur[l]) - np.array(prev[l])) for l in LETTERS) < tol:
+                return True
+            prev = cur
+        return False
+
+    def reset_layout(self):
+        """Put every cube where the symbolic world says it is, upright (teleport; no robot involved).
+
+        Needed because the sim start can disturb the stacks (the rigid-grasp plugin welds the cubes to the gripper when the
+        robot spawns and jolts them by a few mm). All cubes first go to a free staging area, so nothing lies in the way of
+        the slots, then the stacks are rebuilt bottom-up. Returns True when the physical stacks then equal the symbolic ones."""
+        assert not self.world.holds(), "reset_layout needs a world where nobody holds a cube"
+        self.wait_still()
+        letters = [l for st in self.world.stacks.values() for l in st]
+        for l, (x, y) in zip(letters, STAGING):
+            self.human.teleport(l, x, y, TABLE_Z + CUBE / 2 + 0.002)
+            self.arm.settle(0.15)
+        self.arm.settle(1.0)
+        for slot, st in self.world.stacks.items():
+            for level, l in enumerate(st):
+                self.human.place(l, slot, level)
+                self.arm.settle(0.25)
+        self.arm.settle(1.5)
+        self.wait_still()
+        return self.consistent()[0]
 
     # ---- actions -----------------------------------------------------------------------------------------------
     def do(self, text, agent):

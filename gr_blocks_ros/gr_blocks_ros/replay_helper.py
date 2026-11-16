@@ -33,6 +33,7 @@ def main():
     arm = Arm()
     arm.wait_ready()
     ex = Executor(arm, world, HumanSim())
+    print(f"layout reset (cubes re-placed after the sim start): {ex.reset_layout()}")
     same, phys, want = ex.consistent()
     print(f"initial physical state matches the symbolic t_join world: {same}")
     if not same:

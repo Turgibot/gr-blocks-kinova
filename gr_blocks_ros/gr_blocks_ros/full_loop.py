@@ -34,6 +34,7 @@ def main():
     arm = Arm()
     arm.wait_ready()
     ex = Executor(arm, world, HumanSim())
+    print(f"layout reset (cubes re-placed after the sim start): {ex.reset_layout()}")
     same, *_ = ex.consistent()
     print(f"start world physically equals the symbolic start: {same}")
     if not same:

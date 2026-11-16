@@ -34,6 +34,7 @@ setup(
             "grip_sweep = gr_blocks_ros.grip_sweep:main",
             "replay_helper = gr_blocks_ros.replay_helper:main",
             "full_loop = gr_blocks_ros.full_loop:main",
+            "table_test = gr_blocks_ros.table_test:main",
             "make_world = gr_blocks_ros.make_world:main",
         ],
     },
