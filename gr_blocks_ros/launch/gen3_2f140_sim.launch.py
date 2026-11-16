@@ -26,6 +26,8 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration
 from launch_ros.actions import Node
 
+from gr_blocks_ros.sim_patches import add_attach_plugins, controllers_with_gain, patch_pads
+
 # Spawned in this order; `--inactive` ones are configured but not started.
 CONTROLLERS = [
     ("joint_state_broadcaster", []),
@@ -41,8 +43,10 @@ def launch_setup(context):
     controllers_file = os.path.join(
         get_package_share_directory("gr_blocks_ros"), "config", "ros2_controllers_2f140_sim.yaml"
     )
+    controllers_file = controllers_with_gain(controllers_file, LaunchConfiguration("position_gain").perform(context))
     use_sim_time = {"use_sim_time": True}
     gui = LaunchConfiguration("gui").perform(context).lower() == "true"
+    engine = LaunchConfiguration("physics_engine").perform(context)
     worlds = os.path.join(get_package_share_directory("gr_blocks_ros"), "worlds")
     world = LaunchConfiguration("world").perform(context) or "empty.sdf"
     if world != "empty.sdf" and not os.path.isabs(world):
@@ -59,6 +63,14 @@ def launch_setup(context):
             controllers_file,
         ]
     ).perform(context)
+    robot_description_content = patch_pads(
+        robot_description_content,
+        mu=LaunchConfiguration("pad_mu").perform(context),
+        kp=LaunchConfiguration("pad_kp").perform(context),
+        kd=LaunchConfiguration("pad_kd").perform(context),
+    )
+    if LaunchConfiguration("rigid_grasp").perform(context).lower() == "true":
+        robot_description_content = add_attach_plugins(robot_description_content)
 
     robot_state_publisher = Node(
         package="robot_state_publisher",
@@ -73,7 +85,7 @@ def launch_setup(context):
         ),
         launch_arguments={
             "gz_args": f" -r {'' if gui else '-s --headless-rendering '}-v 3 {world}"
-            " --physics-engine gz-physics-bullet-featherstone-plugin"
+            f" --physics-engine {engine}"
         }.items(),
     )
 
@@ -160,6 +172,12 @@ def generate_launch_description():
             DeclareLaunchArgument("launch_rviz", default_value="false", description="Launch RViz?"),
             DeclareLaunchArgument("world", default_value="blocks_world.sdf", description="World file (name in worlds/, absolute path, or empty.sdf)."),
             DeclareLaunchArgument("view_cams", default_value="true", description="Bridge the fixed view_cam/top_cam images to ROS."),
+            DeclareLaunchArgument("pad_mu", default_value="", description="Finger-pad friction (empty = model default)."),
+            DeclareLaunchArgument("pad_kp", default_value="", description="Finger-pad contact stiffness (empty = default)."),
+            DeclareLaunchArgument("pad_kd", default_value="", description="Finger-pad contact damping (empty = default)."),
+            DeclareLaunchArgument("rigid_grasp", default_value="false", description="Sim-only: weld a grasped cube to the gripper (DetachableJoint per cube)."),
+            DeclareLaunchArgument("physics_engine", default_value="gz-physics-bullet-featherstone-plugin", description="Gazebo physics engine plugin (e.g. gz-physics-dartsim-plugin)."),
+            DeclareLaunchArgument("position_gain", default_value="", description="gz_ros2_control position_proportional_gain (empty = its default 0.1)."),
             DeclareLaunchArgument("gui", default_value="false", description="Open the Gazebo GUI (server only if false)."),
             OpaqueFunction(function=launch_setup),
         ]
