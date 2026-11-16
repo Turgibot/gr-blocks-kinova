@@ -23,6 +23,8 @@ GAP = 0.0005          # m, initial clearance between stacked cubes
 MASS = 0.1            # kg
 MU = 1.0
 
+from gr_blocks_ros.blocksworld import SLOTS, START_SLOTS, World  # noqa: E402
+
 FONT = Path(matplotlib.__file__).parent / "mpl-data/fonts/ttf/DejaVuSans-Bold.ttf"
 
 
@@ -36,7 +38,7 @@ def letter_png(letter: str, path: Path, size=256, border=14):
     im.save(path)
 
 
-def block_sdf(letter, x, y, z):
+def block_sdf(letter, x, y, z, mu=MU):
     i = MASS * CUBE**2 / 6
     return f"""
     <model name="block_{letter}">
@@ -44,7 +46,7 @@ def block_sdf(letter, x, y, z):
       <link name="link">
         <inertial><mass>{MASS}</mass><inertia><ixx>{i:.3e}</ixx><iyy>{i:.3e}</iyy><izz>{i:.3e}</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>{CUBE} {CUBE} {CUBE}</size></box></geometry>
-          <surface><friction><ode><mu>{MU}</mu><mu2>{MU}</mu2></ode></friction></surface></collision>
+          <surface><friction><ode><mu>{mu}</mu><mu2>{mu}</mu2></ode></friction></surface></collision>
         <visual name="v"><geometry><box><size>{CUBE} {CUBE} {CUBE}</size></box></geometry>
           <material><diffuse>1 1 1 1</diffuse><pbr><metal><albedo_map>textures/{letter}.png</albedo_map><metalness>0</metalness><roughness>0.9</roughness></metal></pbr></material></visual>
       </link>
@@ -67,16 +69,18 @@ def camera_sdf(name, pos, target, w=1280, h=720, hfov=1.1):
     </model>"""
 
 
-def build(blockworld: Path, out: Path):
+def build(blockworld: Path, out: Path, mu=MU, stacks=None, sdf_name="blocks_world.sdf"):
+    """stacks: {slot: [letters bottom..top]}; default = the three start towers of blockworld.json on P2, P3, P4."""
     towers = json.loads(blockworld.read_text())["towers"]
     (out / "textures").mkdir(parents=True, exist_ok=True)
+    if stacks is None:
+        stacks = {START_SLOTS[i]: list(reversed(t)) for i, t in enumerate(towers)}
     blocks = []
-    n = len(towers)
-    for t, tower in enumerate(towers):
-        y = (n - 1) / 2 * SLOT_DY - t * SLOT_DY           # tower 1 on the left (+y)
-        for k, letter in enumerate(reversed(tower)):      # bottom first
+    for slot, stack in stacks.items():
+        x, y = SLOTS[slot]
+        for k, letter in enumerate(stack):  # bottom first
             z = TABLE_Z + CUBE / 2 + GAP + k * (CUBE + GAP)
-            blocks.append(block_sdf(letter, SLOT_X, y, z))
+            blocks.append(block_sdf(letter, x, y, z, mu))
             letter_png(letter, out / "textures" / f"{letter}.png")
     table_h = TABLE_Z
     sdf = f"""<?xml version="1.0"?>
@@ -109,7 +113,7 @@ def build(blockworld: Path, out: Path):
   </world>
 </sdf>
 """
-    (out / "blocks_world.sdf").write_text(sdf)
+    (out / sdf_name).write_text(sdf)
     return len(blocks)
 
 
@@ -119,8 +123,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--blockworld", type=Path, default=repo / "data" / "blockworld.json")
     ap.add_argument("--out", type=Path, default=repo / "gr_blocks_ros" / "worlds")
+    ap.add_argument("--mu", type=float, default=MU, help="cube friction coefficient")
+    ap.add_argument("--sdf-name", default="blocks_world.sdf", help="file name of the world inside --out")
+    ap.add_argument("--trace-step", type=int, default=None,
+                    help="start from the world after R_ed's first N actions of the cached MASTER trace (N=6 is t_join)")
     a = ap.parse_args()
-    print("wrote", build(a.blockworld, a.out), "blocks to", a.out)
+    stacks = None
+    if a.trace_step is not None:
+        trace = json.loads((a.blockworld.parent / "cached_plans" / "trace_MASTER.json").read_text())
+        w = World.from_towers(trace["meta"]["start_towers"], START_SLOTS)
+        for text in trace["meta"]["observed_plan"][: a.trace_step]:
+            w.apply_text(text, "R_ed")
+        assert not w.holds(), "the chosen step leaves R_ed holding a cube; pick a step between actions"
+        stacks = w.stacks
+    print("wrote", build(a.blockworld, a.out, a.mu, stacks, a.sdf_name), "blocks to", a.out)
 
 
 if __name__ == "__main__":
