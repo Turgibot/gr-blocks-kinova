@@ -71,8 +71,12 @@ class Arm(Node):
         return fut.result() if fut.done() else None
 
     def settle(self, seconds):
+        """Spin for `seconds` of simulated time AND of wall time (whichever is longer). The wall-time floor matters after
+        a blocking pause: the backlog of /clock messages would otherwise use the whole wait up at once, before the
+        newest TF / poses have been received."""
         end = self.get_clock().now() + Duration(seconds=seconds)
-        while self.get_clock().now() < end:
+        wall_end = time.monotonic() + seconds
+        while self.get_clock().now() < end or time.monotonic() < wall_end:
             rclpy.spin_once(self, timeout_sec=0.05)
 
     def wait_ready(self):
