@@ -3,7 +3,7 @@
 Start the simulation first, then this launch in a second terminal (same ROS_DOMAIN_ID / GZ_PARTITION):
 
     ros2 launch gr_blocks_ros gen3_2f140_sim.launch.py
-    ros2 launch gr_blocks_ros gen3_2f140_sim_moveit.launch.py [launch_rviz:=true]
+    ros2 launch gr_blocks_ros gen3_2f140_sim_moveit.launch.py [launch_rviz:=true] [world_state:=false]
 
 The SRDF, joint limits and controller mapping are the 2F-140 files from kinova_example (branch gripper-2f140);
 kinematics, OMPL and the RViz layout are reused from Kinova's 2F-85 MoveIt package. Nothing in either is modified.
@@ -69,13 +69,20 @@ def launch_setup(context):
         ],
         condition=IfCondition(LaunchConfiguration("launch_rviz")),
     )
-    return [move_group, rviz]
+    world_state = Node(
+        package="gr_blocks_ros",
+        executable="world_state",
+        output="screen",
+        condition=IfCondition(LaunchConfiguration("world_state")),
+    )
+    return [move_group, rviz, world_state]
 
 
 def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("launch_rviz", default_value="false", description="Launch RViz?"),
+            DeclareLaunchArgument("world_state", default_value="true", description="Run world_state (cube TF + planning scene from Gazebo)."),
             OpaqueFunction(function=launch_setup),
         ]
     )
