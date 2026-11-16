@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>gr_blocks_ros</name>
+  <version>0.0.1</version>
+  <description>GR-Blocks experiment on a Kinova Gen3 + Robotiq 2F-140 (Gazebo first).</description>
+  <maintainer email="turgibot@gmail.com">Guy Tordjman</maintainer>
+  <license>Apache-2.0</license>
+
+  <exec_depend>kortex_bringup</exec_depend>
+  <exec_depend>kortex_description</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
+  <exec_depend>kinova_example</exec_depend>
+  <exec_depend>kinova_gen3_7dof_robotiq_2f_85_moveit_config</exec_depend>
+  <exec_depend>moveit_ros_move_group</exec_depend>
+  <exec_depend>moveit_configs_utils</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
