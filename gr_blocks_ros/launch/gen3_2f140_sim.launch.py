@@ -10,12 +10,14 @@ Based on Kinova's kortex_sim_control.launch.py (not modified), with two differen
 """
 
 import os
+import sys
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
     AppendEnvironmentVariable,
     DeclareLaunchArgument,
+    ExecuteProcess,
     IncludeLaunchDescription,
     OpaqueFunction,
     RegisterEventHandler,
@@ -142,7 +144,11 @@ def launch_setup(context):
         RegisterEventHandler(OnProcessExit(target_action=a, on_exit=[b]))
         for a, b in zip(spawners, spawners[1:])
     ]
-    start_first = RegisterEventHandler(OnProcessExit(target_action=gz_spawn, on_exit=[spawners[0]]))
+    on_spawned = [spawners[0]]
+    if LaunchConfiguration("rigid_grasp").perform(context).lower() == "true":
+        # the cubes are welded to the gripper when the robot appears: let them go at once (see release_cubes.py)
+        on_spawned.append(ExecuteProcess(cmd=[sys.executable, "-m", "gr_blocks_ros.release_cubes"], output="screen"))
+    start_first = RegisterEventHandler(OnProcessExit(target_action=gz_spawn, on_exit=on_spawned))
 
     rviz = Node(
         package="rviz2",
