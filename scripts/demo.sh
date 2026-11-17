@@ -2,6 +2,10 @@
 # One-command demo: sim (+ Gazebo window if GUI=true) + MoveIt + the full MASTER loop, then shuts everything down.
 #   GUI=true scripts/demo.sh          # with the Gazebo window (run from a system terminal)
 #   scripts/demo.sh                   # headless; picture of the end state in $OUT (default /tmp/demo)
+# Started from VS Code's snap terminal the environment points the Gazebo GUI at snap libraries and crashes it
+# ("symbol lookup error ... /snap/core20/..."): drop those variables.
+unset GTK_PATH GTK_EXE_PREFIX GSETTINGS_SCHEMA_DIR LOCPATH GIO_MODULE_DIR GTK_IM_MODULE_FILE GTK_MODULES
+export XDG_DATA_DIRS=/usr/local/share:/usr/share
 source /opt/ros/jazzy/setup.bash; source ~/kinova-dev/ros_ws/install/setup.bash
 export ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-78} GZ_IP=127.0.0.1 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 export GZ_PARTITION=demo_$$

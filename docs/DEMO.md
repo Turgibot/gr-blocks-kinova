@@ -6,7 +6,7 @@ Total time for the full demo: about 15 minutes. Each scenario needs a **freshly 
 ## Quickest way: one command
 
 ```
-GUI=true scripts/demo.sh      # with the Gazebo window, from a system terminal (GUI + weld not tried yet)
+GUI=true scripts/demo.sh      # with the Gazebo window (tested: GUI process stayed up for the whole run, FULL_LOOP PASS in 94 s; I could not see the window myself)
 scripts/demo.sh               # headless; picture in /tmp/demo/final.png
 ```
 It starts the sim and MoveIt, waits for `/move_action`, runs `full_loop`, then shuts everything down (headless run tested: FULL_LOOP PASS, 104 s). `action server missing` from `full_loop` means MoveIt/sim were not running in that terminal's ROS_DOMAIN_ID; `full_loop` alone only works while both launch files are up.
@@ -43,7 +43,7 @@ ros2 launch gr_blocks_ros gen3_2f140_sim_moveit.launch.py          # add launch_
 ```
 Wait ~1 minute until the arm sits at Home above three towers of lettered cubes.
 Point out: the table extended under the arm, 12 cubes (letters on the faces), the 2F-140 gripper.
-Note: **the GUI together with `rigid_grasp:=true` has not been tried yet**; if it misbehaves use the headless route in section 6
+Note: the GUI with `rigid_grasp:=true` ran through the full loop once (window process stayed alive; nobody looked at it); if it misbehaves use the headless route in section 6
 and look at the saved images.
 
 ## 3. Scenario: pick-and-place and the table (about 1.5 min)
