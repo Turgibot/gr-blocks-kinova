@@ -344,8 +344,12 @@ class Arm(Node):
         self.gripper(close, settle=1.5)
         if self.rigid:
             self._gz_weld("a", letter)
+            print(letter, "before close")
             self.gripper(max(0.0, close - 0.08), settle=0.5)  # ease the pads off: the weld carries the cube, no contact fight
+            print(letter, "after close")
+        print("before attach ", letter)    
         self.attach(letter)
+        print("after attach ", letter)    
         z0 = self.block(letter)[2]
         if not self.cartesian([grasp_ee + up * lift], q, avoid_collisions=False):
             return False

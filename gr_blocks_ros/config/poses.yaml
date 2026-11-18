@@ -1,0 +1,9 @@
+# Named arm configurations (radians, joint_1 .. joint_7), used by `python3 -m gr_blocks_ros.go_pose NAME`.
+#
+# home:    the SRDF "Home" pose (kinova_example/config/2f140/gen3_2f140.srdf); the sim starts here (sim_home.launch.py).
+# observe: start of every loop. The wrist camera sees all cubes. Found by hand in the sim on 2026-11-18 with the
+#          towers at x = 1.00 m (worlds/blocks_world_long.sdf). Camera at about (0.43, 0, 0.33) m in base_link, looking
+#          forward and 24 deg down; the 3 towers fill about u 183-464, v 147-312 of the 640 x 480 image (computed from
+#          the URDF), leaving room around them for cubes put down on the table.
+home:    [0.0, 0.26, 3.14, -2.27, 0.0, 0.96, 1.57]
+observe: [0.0, 0.45, 3.14, -2.50, 0.0, 0.96, 1.57]
