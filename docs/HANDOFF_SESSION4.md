@@ -1,6 +1,8 @@
 # Handoff for the next session (written 2026-11-18, end of session 3)
 
 Read in this order: `CLAUDE.md` (standing rules), this file, then `docs/HANDOFF_SESSION3.md` (the old pipeline and its lessons).
+> **Update 2026-11-21:** the package folder is now `gr_blocks/` (module `gr_blocks/gr_blocks_ros/`; package name and imports unchanged). Old pipeline modules, the old launch files, `scripts/` (incl. `scripts/dev/`) and `reference/*.py` were deleted (in git history). Only `go_pose.py`, `move_named.py` and `gr_blocks.launch.py` remain; the "Dev tools" section below is obsolete.
+
 Branch: `feature/grasp-and-blocksworld` (pushed to GitHub `origin`). Nothing has run on the real arm.
 
 ## The goal (unchanged)
@@ -23,19 +25,19 @@ Freedman & Zilberstein (AAAI-17) on a Kinova Gen3 7-DoF + Robotiq 2F-140, first 
 2. The user decided: **start over with new files and new scripts**, small steps, watching the GUI (do NOT run headless).
    `skills.py` has the user's own uncommitted debug prints (now committed as-is); the old pipeline is left untouched.
 
-## The new start (new files, all in `gr_blocks_ros/`)
+## The new start (new files, all in `gr_blocks/`)
 
 | Step | Done | File |
 |---|---|---|
-| 1. Arm at Home when the sim starts | yes, seen in GUI | `launch/sim_home.launch.py` (SRDF Home -> xacro `initial_positions_file`) |
+| 1. Arm at Home when the sim starts | yes, seen in GUI | `launch/gr_blocks.launch.py` (SRDF Home -> xacro `initial_positions_file`) |
 | 2. Table longer in +x (gripper direction) | yes | `worlds/blocks_world_long.sdf` (table x -0.25..1.25, 1.0 wide) |
 | 3. Cubes 1 m from the base | yes | same world: 3 towers at x = 1.00, y = 0.12 / 0 / -0.12 |
 | 4. Gazebo GUI start view | yes | launch arg `view` -> copied gui.config with `<camera_pose>` |
 | 5. Wrist camera on | yes (`vision:=true`) | launch bridges `/wrist_mounted_camera/image` and `/camera_info` |
-| 6. Observe pose (camera sees all cubes) | pose found by the user in the GUI | `config/poses.yaml` `observe` |
-| 7. Move to a named pose | written, built, **not yet run in sim** | `gr_blocks_ros/go_pose.py` |
+| 6. Observe pose (camera sees all cubes) | pose found by the user in the GUI | `config/poses.json` `observe` |
+| 7. Move to a named pose | written, built, **not yet run in sim** | `gr_blocks/gr_blocks_ros/go_pose.py` |
 
-`sim_home.launch.py`: Gazebo (bullet-featherstone, needed for the 2F-140 mimic joints; DART fails with "mimic constraint"),
+`gr_blocks.launch.py`: Gazebo (bullet-featherstone, needed for the 2F-140 mimic joints; DART fails with "mimic constraint"),
 spawn at z = 0.30, controllers chained (joint_state_broadcaster -> joint_trajectory_controller -> robotiq_gripper_controller).
 No MoveIt, no weld plugins, no scripts.
 
@@ -49,7 +51,7 @@ Room around the towers is left for cubes put on the table during word assembly.
 cd ~/kinova-dev/ros_ws && colcon build --packages-select gr_blocks_ros && source install/setup.bash
 export ROS_DOMAIN_ID=78 GZ_PARTITION=home GZ_IP=127.0.0.1 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 
-ros2 launch gr_blocks_ros sim_home.launch.py                 # [view:="x y z r p y"] [world:=...]
+ros2 launch gr_blocks_ros gr_blocks.launch.py                 # [view:="x y z r p y"] [world:=...]
 python3 -m gr_blocks_ros.go_pose observe 3                    # or: home 5
 ros2 run rqt_image_view rqt_image_view /wrist_mounted_camera/image
 # set joints directly (no collision check):

@@ -20,7 +20,7 @@ Choices: Gen3 = R_ing, human = R_ed; letters read by vision (sim and real); firs
 ## Phases
 
 **0. Scaffolding and decisions**
-- ament_python package `gr_blocks_ros/` at the repo root; this repo lives in `~/kinova-dev/ros_ws/src/` and builds with that workspace.
+- ament_python package `gr_blocks_ros` in `gr_blocks/` at the repo root (Python module `gr_blocks/gr_blocks_ros/`); this repo lives in `~/kinova-dev/ros_ws/src/` and builds with that workspace.
 - README, pin down block size, tower slots, human zone vs robot zone.
 - Decide: vendor recognition scripts vs call the GR-Blocks repo.
 

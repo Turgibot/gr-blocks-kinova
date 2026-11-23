@@ -1,3 +1,5 @@
+> **Removed 2026-11-21:** the old pipeline code described here (and the `scripts/` it mentions) was deleted from the working tree in the cleanup; it is still in git history. Paths below use the old names.
+
 # Handoff for the next session (written 2026-11-17, end of session 2)
 
 Read in this order: `CLAUDE.md` (standing rules), this file, `docs/PHASE3_NOTES.md` (results and details), `docs/HANDOFF.md`
@@ -57,12 +59,12 @@ Code terminal crashes the server).
 - Pads are 70 mm tall: grasp point is 15 mm above cube centre; a 45 mm cube stalls the fingers at ~0.45 rad, close cmd 0.46.
 - Do not `pkill -f` patterns that match your own shell; kill by pid/process group.
 
-## Code map (`gr_blocks_ros/gr_blocks_ros/`)
+## Code map (`gr_blocks/gr_blocks_ros/`)
 
 `skills.py` (Arm: pick, place_at, place_on, rigid-grasp helpers) - `blocksworld.py` (World, SLOTS) - `executor.py` (Executor,
 HumanSim, reset_layout) - `recognizer.py` (CachedRecognizer) - `make_world.py` (SDF generator) - `sim_patches.py` (pads, weld
 plugins, gain) - `release_cubes.py` - `paths.py` - scenario scripts `full_loop.py`, `replay_helper.py`, `table_test.py`,
-`release_test.py`, etc. Launch files in `gr_blocks_ros/launch/`. Data from the sibling repo is in `data/` (cached plans).
+`release_test.py`, etc. Launch files in `gr_blocks/launch/`. Data from the sibling repo is in `data/` (cached plans).
 
 ## Suggested next steps (user decides)
 

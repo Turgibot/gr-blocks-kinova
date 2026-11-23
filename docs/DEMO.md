@@ -1,3 +1,5 @@
+> **Removed 2026-11-21:** the old pipeline code described here (and the `scripts/` it mentions) was deleted from the working tree in the cleanup; it is still in git history. Paths below use the old names.
+
 # Demo guide: what works so far (simulation only)
 
 Everything below runs in Gazebo with the Gen3 + Robotiq 2F-140. Nothing here touches a real arm.

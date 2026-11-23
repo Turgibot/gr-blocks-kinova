@@ -26,7 +26,7 @@ Recognition for Responsive Interaction Using Classical Planners* (AAAI-17; PDF i
 ## Conventions
 
 - ROS 2 Jazzy, Ubuntu 24.04, Python. Package name `gr_blocks_ros` (ament_python), placed at the repo root as
-  `gr_blocks_ros/` (not yet created).
+  `gr_blocks/` (the ROS package folder; the Python module is `gr_blocks/gr_blocks_ros/`).
 - This repo is cloned at `~/kinova-dev/ros_ws/src/gr-blocks-kinova` and built with kinova-dev's single workspace
   (`cd ~/kinova-dev/ros_ws && colcon build --packages-select gr_blocks_ros`). It is hidden from kinova-dev's git via
   `kinova-dev/.git/info/exclude`. Remote: `git@gitlab.com:birc2/kinova_gen3/gr-blocks-kinova.git` (empty, nothing pushed).
