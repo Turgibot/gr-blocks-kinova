@@ -50,6 +50,8 @@ LIFT_M = 0.10  # m, lift after closing on the cube
 LIFT_DURATION = 2.0  # s
 PLACE_CLEARANCE = 0.02  # m, the held cube arrives this far above its place and is then lowered onto the stack
 PLACE_LOWER_DURATION = 1.0  # s
+RETREAT_M = 0.10  # m, after releasing: straight back along -x, then to observe
+RETREAT_DURATION = 1.5  # s
 BACK_M = 0.30  # m, back away from the table (-x) after the lift
 BACK_DURATION = 3.0  # s
 
@@ -233,7 +235,7 @@ class Experiment:
     def play(self, src_column, dest_column):
         """Test move: the arm reaches the top cube of `src_column` with the gripper open, closes the gripper (the cube is attached),
         lifts 10 cm, backs up 30 cm, reaches the place for it on top of the stack in `dest_column` (on the table if empty) with the
-        cube held, releases the cube and opens the gripper, updates the db and goes back to observe.
+        cube held, releases the cube and opens the gripper, updates the db, backs up 10 cm along -x and goes back to observe.
 
         The gripper opens on the way to the cube (see _reach) and stays open (OPEN_MM): the move ends at observe with the arm
         and gripper as every move starts. If the move fails, a cube that is attached is released and the arm goes back to observe before the error is raised.
@@ -266,6 +268,8 @@ class Experiment:
             self._arm.move_gripper_dist(OPEN_MM, GRIPPER_OPEN_FRACTION * TARGET_DURATION).wait()
             self._db[src_column][pick_row] = None  # the cube is now on top of the destination stack
             self._db[dest_column][place_row] = letter
+            retreat = np.array([-RETREAT_M, 0.0, 0.0])  # back away from the stack parallel to the x axis before leaving for observe
+            self._arm.move_ik(ee + retreat, target=dest + retreat, pointing=True, straight=True, duration=RETREAT_DURATION).wait()
             self._go_observe()
         except RuntimeError:
             if self._attached:  # a failed move must not leave a cube attached: it would block every later move
