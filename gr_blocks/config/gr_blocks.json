@@ -1,0 +1,28 @@
+{
+  "gui": true,
+  "_gui": "true | false  (false = Gazebo server only, no window)",
+
+  "world": "blocks_world_long.sdf",
+  "_world": "blocks_world_long.sdf (table to x = 1.25 m, 3 towers at x = 1.00) | blocks_world.sdf | blocks_world_tjoin.sdf | absolute path to an .sdf",
+
+  "view": "1.213 -0.435 0.962 0 0.744 2.531",
+  "_view": "start camera of the Gazebo window: 'x y z roll pitch yaw' (m, rad); read the current one with: gz topic -e -n 1 -t /gui/camera/pose",
+
+  "camera": true,
+  "_camera": "true | false  (wrist camera: adds the camera link to the robot, bridges /wrist_mounted_camera/image and /camera_info)",
+
+  "moveit": true,
+  "_moveit": "true | false  (start move_group: collision-aware planning and IK)",
+
+  "rviz": false,
+  "_rviz": "true | false  (RViz with the MoveIt layout; only with moveit true)",
+
+  "physics": "dart",
+  "_physics": "dart | bullet  (Gazebo physics engine. dart: Gazebo's default; the weld does not open the gripper, but one of the 2F-140's five mimic joints (left_inner_finger_joint) is not coupled. bullet: bullet-featherstone couples all mimic joints, but a weld makes the fingers drift open)",
+
+  "position_gain": 0,
+  "_position_gain": "number > 0 | 0  (gz_ros2_control position_proportional_gain: joint velocity = gain * position error. Default of gz_ros2_control is 0.1, which tracks the 2F-140's mimic joints so softly that the finger linkage looks loose and a weld makes the fingers drift. 10 holds the linkage correct (tested with physics dart). 0 = leave the gz_ros2_control default)",
+
+  "weld": true,
+  "_weld": "true | false  (sim only: one Gazebo DetachableJoint per cube so the experiment can attach a cube to the gripper and release it; the launch detaches all cubes right after the robot is spawned)"
+}
