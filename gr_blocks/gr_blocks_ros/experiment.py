@@ -61,6 +61,9 @@ DESCENT_SLOPE = 1.0  # dz/dy of the sideways descent after the tallest column (1
 TRANSIT_SPEED = 0.10  # m/s, lift, sideways move and descent (straight lines)
 OBSERVE_SPEED = 1.25 * TRANSIT_SPEED  # m/s, the straight-line return to observe (25 % faster)
 OBSERVE_FK_DURATION = 2.4  # s, the joint move to observe at start (was 3.0; 25 % faster)
+START_ATTEMPTS = 3  # tries per start-up step before the experiment gives up
+OBSERVE_TIMEOUT = 8.0  # s, the move to observe at start (2.4 s move + ~1 s planning); the first action goal after start-up
+                       # sometimes gets no answer, and the retry then succeeds: a short limit keeps that wait short
 MIN_MOVE_DURATION = 1.0  # s, shortest straight move
 PLACE_CLEARANCE = 0.02  # m, the held cube arrives this far above its place and is then lowered onto the stack
 PLACE_LOWER_DURATION = 1.0  # s
@@ -132,12 +135,8 @@ def read_line(prompt):
 
 class Experiment:
     def __init__(self):
-        self._db = [[None] * ROWS for _ in range(COLUMNS)]  # db[column][row]
-        # The three towers of worlds/blocks_world_long.sdf, bottom to top. Columns count from the left as the robot sees
-        # the table (the robot faces +x, so its left is +y): column 3 is the tower at y = +0.09, 4 at y = 0, 5 at y = -0.09.
-        for column, tower in TOWERS:
-            for row, letter in enumerate(tower):
-                self._db[column][row] = letter
+        self._db = None  # db[column][row], see _reset_board
+        self._reset_board()
         # positions[column][row] = (x, y, z) of the centre of a cube at that cell, in base_link (not joint angles)
         self._positions = [[(TOWER_X, COLUMN_SPACING * (4 - column), TABLE_Z + FIRST_CUBE_Z + ROW_SPACING * row)
                             for row in range(ROWS)] for column in range(COLUMNS)]
@@ -203,8 +202,36 @@ class Experiment:
             observe = json.load(f)["observe"]
         arm = self._arm.move_fk(observe, OBSERVE_FK_DURATION)
         gripper = self._arm.move_gripper_dist(OPEN_MM, 1.0)
-        arm.wait()
-        gripper.wait()
+        deadline = time.monotonic() + OBSERVE_TIMEOUT
+        for name, handle in (("arm", arm), ("gripper", gripper)):
+            if not handle.wait(max(0.0, deadline - time.monotonic())):  # False = timed out (raises if the move failed)
+                arm.cancel()
+                gripper.cancel()
+                raise TimeoutError(f"the {name} did not reach observe within {OBSERVE_TIMEOUT:.0f} s")
+
+    def _reset_board(self):
+        """The db as the three starting towers of worlds/blocks_world_long.sdf, bottom to top. Columns count from the left as
+        the robot sees the table (the robot faces +x, so its left is +y): column 3 is the tower at y = +0.09, 4 at y = 0,
+        5 at y = -0.09."""
+        self._db = [[None] * ROWS for _ in range(COLUMNS)]
+        for column, tower in TOWERS:
+            for row, letter in enumerate(tower):
+                self._db[column][row] = letter
+
+    def _with_retry(self, label, step):
+        """Run start-up step `step()` up to START_ATTEMPTS times, printing progress; returns its result.
+
+        Every step has its own time limit (OBSERVE_TIMEOUT for the move, ~10 s for MoveIt's answer, 5 s for TF), so none hangs."""
+        for attempt in range(1, START_ATTEMPTS + 1):
+            print(f"[start] {label} (attempt {attempt}/{START_ATTEMPTS}) ...", flush=True)
+            try:
+                result = step()
+                print(f"[start] {label}: ok", flush=True)
+                return result
+            except (RuntimeError, TimeoutError, subprocess.TimeoutExpired) as error:
+                print(f"[start] {label}: failed: {error}", flush=True)
+        raise RuntimeError(f"{label} failed {START_ATTEMPTS} times. Is the sim running (gr_blocks.launch.py, with MoveIt) "
+                           "in this terminal's ROS_DOMAIN_ID / GZ_PARTITION?")
 
     def _reset_cubes(self):
         """Teleport every cube to its starting place (Gazebo set_pose), whether or not it was moved.
@@ -224,18 +251,29 @@ class Experiment:
                     raise RuntimeError(f"could not teleport block_{letter}: {result.stdout.strip() or result.stderr.strip()}")
 
     def start(self):
-        """Move to `observe` with the gripper open, put the cubes in their starting places, then ask the user to pick a
-        word from the paper vocabulary (the goal). Returns the word, or None if the user pressed Esc."""
-        self._add_table()
-        self._go_observe()
-        self._observe_pose = self._ee_pose()  # where _return_to_observe goes back to, in a straight line
-        self._reset_cubes()
-        print("Pick a word:", ", ".join(self._vocabulary))
+        """Start-up, each step with a time limit and START_ATTEMPTS tries (raises RuntimeError if one keeps failing): the
+        table and riser into MoveIt, the arm to `observe` with the gripper open, its end-effector pose recorded. Then ask the
+        user for a word from the paper vocabulary (the goal), or `r` to put the cubes back in their starting towers (the
+        board too) and ask again. The cubes are not reset otherwise: the board assumes the starting towers.
+        Returns the word, or None if the user pressed Esc."""
+        print("[start] starting the experiment: the sim must be running (gr_blocks.launch.py)", flush=True)
+        self._with_retry("adding the table and the riser to MoveIt", self._add_table)
+        self._with_retry("moving the arm to observe", self._go_observe)
+        # where _return_to_observe goes back to, in a straight line
+        self._observe_pose = self._with_retry("recording the observe pose", self._ee_pose)
+        print("[start] ready", flush=True)
         while True:
-            line = read_line("word (Esc to exit)> ")
+            print("Pick a word:", ", ".join(self._vocabulary))
+            print("or r to reset the cubes to the starting towers")
+            line = read_line("word / r (Esc to exit)> ")
             if line is None:
                 return None
             word = line.strip().upper()
+            if word == "R":
+                self._with_retry("resetting the cubes", self._reset_cubes)
+                self._reset_board()
+                self.show_board()
+                continue
             if word in self._vocabulary:
                 self._word = word
                 return word
@@ -464,7 +502,11 @@ def main():
     """python3 -m gr_blocks_ros.experiment   (the sim must be running, see docs/HANDOFF_SESSION4.md)"""
     rclpy.init()
     experiment = Experiment()
-    if experiment.start() is None:  # Esc
+    try:
+        if experiment.start() is None:  # Esc
+            return
+    except RuntimeError as error:
+        print(f"[start] giving up: {error}")
         return
     while True:
         experiment.show_board()
