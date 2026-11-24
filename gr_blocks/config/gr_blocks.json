@@ -3,7 +3,7 @@
   "_gui": "true | false  (false = Gazebo server only, no window)",
 
   "world": "blocks_world_long.sdf",
-  "_world": "blocks_world_long.sdf (table to x = 1.25 m, 3 towers at x = 1.00) | blocks_world.sdf | blocks_world_tjoin.sdf | absolute path to an .sdf",
+  "_world": "blocks_world_long.sdf (table to x = 1.25 m, 3 towers at x = 0.85) | blocks_world.sdf | blocks_world_tjoin.sdf | absolute path to an .sdf",
 
   "view": "1.213 -0.435 0.962 0 0.744 2.531",
   "_view": "start camera of the Gazebo window: 'x y z roll pitch yaw' (m, rad); read the current one with: gz topic -e -n 1 -t /gui/camera/pose",

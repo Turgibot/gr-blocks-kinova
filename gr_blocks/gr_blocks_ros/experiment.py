@@ -14,9 +14,15 @@ import sys
 import termios
 import tty
 
+import time
+
 import numpy as np
 import rclpy
 from ament_index_python.packages import get_package_share_directory
+from geometry_msgs.msg import Pose
+from moveit_msgs.msg import CollisionObject, PlanningScene
+from moveit_msgs.srv import ApplyPlanningScene
+from shape_msgs.msg import SolidPrimitive
 
 from gz.msgs10.empty_pb2 import Empty
 from gz.transport13 import Node as GzNode
@@ -26,10 +32,10 @@ from gr_blocks_ros.arm_mover import ArmMover
 COLUMNS = 9
 ROWS = 9
 
-# Where the cubes are, in base_link (m). From worlds/blocks_world_long.sdf: the towers stand at x = 1.0, columns 0.12 m apart
+# Where the cubes are, in base_link (m). From worlds/blocks_world_long.sdf: the towers stand at x = 0.85, columns 0.12 m apart
 # (column 3 at y = +0.12, 4 at y = 0, 5 at y = -0.12, so column c is at y = 0.12 * (4 - c)). The table top is z = 0 in
 # base_link; a cube is 0.045 m high and the cubes of a tower are 0.0455 m apart (0.0005 m gap), the first centre at z = 0.023.
-TOWER_X = 1.0
+TOWER_X = 0.85  # was 1.0: at x >= 0.9 columns 0 and 8 (y = +-0.48) are out of reach at rows 0-1 (IK, 15 deg approach)
 COLUMN_SPACING = 0.12
 FIRST_CUBE_Z = 0.023
 ROW_SPACING = 0.0455
@@ -52,8 +58,24 @@ PLACE_CLEARANCE = 0.02  # m, the held cube arrives this far above its place and 
 PLACE_LOWER_DURATION = 1.0  # s
 RETREAT_M = 0.10  # m, after releasing: straight back along -x, then to observe
 RETREAT_DURATION = 1.5  # s
-BACK_M = 0.30  # m, back away from the table (-x) after the lift
+# After the lift the arm backs away from the table (-x) until end_effector_link is at x = BACK_X. A fixed distance broke when
+# the towers moved from x = 1.0 to 0.85: 30 cm back then ends at x = 0.35, against the base (straight line 87-97 % feasible).
+BACK_X = 0.50  # m, where the 30 cm back-up ended with the towers at x = 1.0
 BACK_DURATION = 3.0  # s
+
+# A move whose pick or place is on the table (row 0) reaches with the approach axis tilted DIAGONAL_PITCH down from +x, for the
+# whole move (pick and place): the cube is welded to the gripper, so it must be put down at the same tilt it was picked at,
+# or it lands rotated. A horizontal grasp at row 0 puts end_effector_link 2.3 cm above the table and the links hit it.
+# 15 deg, not 45: at 45 deg the end effector sits ~5 cm further out and most cells are out of reach (no IK); at 15 deg every
+# cell is reachable with the table in the scene (lowest pad corner ~8 mm above the table at row 0).
+DIAGONAL_PITCH = np.radians(15.0)
+
+# The table for MoveIt (worlds/blocks_world_long.sdf: centre (0.5, 0, 0.15) in the world, 1.5 x 1.0 x 0.3 m; base_link is at
+# world z = 0.30, so the table top is z = 0 in base_link). The base_link mesh bottom is exactly at z = 0, so the MoveIt box is
+# TABLE_GAP lower, or the robot would start in collision. With it, IK, joint plans and straight lines all avoid the table.
+TABLE_CENTER = (0.5, 0.0, -0.15)
+TABLE_SIZE = (1.5, 1.0, 0.3)
+TABLE_GAP = 0.002  # m
 
 
 def load_vocabulary():
@@ -136,6 +158,29 @@ class Experiment:
         self._detach_pub[cube].publish(Empty())
         self._attached = None
 
+    def _add_table(self):
+        """Put the table into MoveIt's planning scene as a collision box (see TABLE_CENTER), so no move goes through it."""
+        client = self._arm.create_client(ApplyPlanningScene, "/apply_planning_scene")
+        if not client.wait_for_service(timeout_sec=10.0):
+            raise RuntimeError("no /apply_planning_scene: is move_group running (moveit true in gr_blocks.json)?")
+        box = SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[float(v) for v in TABLE_SIZE])
+        pose = Pose()
+        pose.position.x, pose.position.y = (float(v) for v in TABLE_CENTER[:2])
+        pose.position.z = float(TABLE_CENTER[2] - TABLE_GAP)
+        pose.orientation.w = 1.0
+        table = CollisionObject(id="table", operation=CollisionObject.ADD, primitives=[box], primitive_poses=[pose])
+        table.header.frame_id = "base_link"
+        scene = PlanningScene(is_diff=True)
+        scene.world.collision_objects = [table]
+        future = client.call_async(ApplyPlanningScene.Request(scene=scene))  # ArmMover spins in its own thread
+        deadline = time.monotonic() + 10.0
+        while not future.done():
+            if time.monotonic() > deadline:
+                raise RuntimeError("/apply_planning_scene did not answer")
+            time.sleep(0.05)
+        if not future.result().success:
+            raise RuntimeError("MoveIt did not accept the table collision object")
+
     def _go_observe(self):
         """Every move starts and ends here: the arm at the `observe` pose (config/poses.json), the gripper open to OPEN_MM
         (it is never fully closed)."""
@@ -166,6 +211,7 @@ class Experiment:
     def start(self):
         """Move to `observe` with the gripper open, put the cubes in their starting places, then ask the user to pick a
         word from the paper vocabulary (the goal). Returns the word, or None if the user pressed Esc."""
+        self._add_table()
         self._go_observe()
         self._reset_cubes()
         print("Pick a word:", ", ".join(self._vocabulary))
@@ -215,17 +261,36 @@ class Experiment:
         """Number of cubes in a column."""
         return sum(cube is not None for cube in self._db[column])
 
-    def _reach(self, cube):
-        """From observe: open the gripper and point at `cube` (x, y, z, the centre of a cube cell), reaching it with the pad frame on its front face.
-        Returns the end effector position it reached.
+    @staticmethod
+    def _approach(diagonal):
+        """Unit approach direction (the gripper's +z) in base_link: +x (horizontal), or +x tilted DIAGONAL_PITCH down.
+
+        Both lie in the x-z plane, so the closing axis stays horizontal along y: the pads are parallel to the cube's side faces.
+        """
+        if not diagonal:
+            return np.array([1.0, 0.0, 0.0])
+        return np.array([np.cos(DIAGONAL_PITCH), 0.0, -np.sin(DIAGONAL_PITCH)])
+
+    @staticmethod
+    def _grasp_position(cube, approach):
+        """End effector position that puts the pad frame where the approach line through the cube centre enters the cube.
+
+        Horizontal: the front face, CUBE_SIZE / 2 before the centre. Tilted by p <= 45 deg: still the front face,
+        CUBE_SIZE / 2 / cos(p) before the centre (at 45 deg the top-front edge).
+        """
+        depth = (CUBE_SIZE / 2) / max(abs(approach[0]), abs(approach[2]))
+        return np.asarray(cube, float) - approach * (depth + TCP_OFFSET)
+
+    def _reach(self, cube, approach):
+        """From observe: open the gripper and point at `cube` (x, y, z, the centre of a cube cell) along `approach`, reaching
+        it with the pad frame where the approach line enters the cube (see _grasp_position). Returns the end effector position.
 
         The gripper opens to OPEN_MM within GRIPPER_OPEN_FRACTION of the arm's move, which starts at the same time. The
-        gripper is pointed horizontally along +x at the cell, square to the cube faces (the cubes are not rotated). The
-        first 50 % of the way (and of the time) lines the gripper up with the target; the last 50 % is a straight line to it.
+        first part of the way lines the gripper up on the approach line behind the cube (for a diagonal approach: higher
+        and further back); the last part is a straight line along `approach` to it (ArmMover align).
         """
         cube = np.asarray(cube, float)
-        approach = np.array([1.0, 0.0, 0.0])  # along +x: square to the front face of every cube, so the pads are parallel to its sides
-        position = cube - approach * (CUBE_SIZE / 2 + TCP_OFFSET)
+        position = self._grasp_position(cube, approach)
         gripper = self._arm.move_gripper_dist(OPEN_MM, GRIPPER_OPEN_FRACTION * TARGET_DURATION)
         arm = self._arm.move_ik(position, target=cube, pointing=True, align=True, duration=TARGET_DURATION)
         arm.wait()
@@ -235,7 +300,10 @@ class Experiment:
     def play(self, src_column, dest_column):
         """Test move: the arm reaches the top cube of `src_column` with the gripper open, closes the gripper (the cube is attached),
         lifts 10 cm, backs up 30 cm, reaches the place for it on top of the stack in `dest_column` (on the table if empty) with the
-        cube held, releases the cube and opens the gripper, updates the db, backs up 10 cm along -x and goes back to observe.
+        cube held, releases the cube and opens the gripper, updates the db, backs up 10 cm along the approach and goes back to observe.
+
+        The approach is horizontal (+x), or diagonal (DIAGONAL_PITCH down) for the whole move when the pick or the place is on
+        the table (row 0): the reach and the place then come down a diagonal from higher up, so the links stay off the table.
 
         The gripper opens on the way to the cube (see _reach) and stays open (OPEN_MM): the move ends at observe with the arm
         and gripper as every move starts. If the move fails, a cube that is attached is released and the arm goes back to observe before the error is raised.
@@ -249,18 +317,19 @@ class Experiment:
             pick_row = self._height(src_column) - 1
             letter = self._db[src_column][pick_row]
             cube = np.array(self._positions[src_column][self._height(src_column) - 1])
-            position = self._reach(cube)
+            approach = self._approach(diagonal=pick_row == 0 or place_row == 0)
+            position = self._reach(cube, approach)
             self._arm.move_gripper_dist(CLOSE_MM, CLOSE_DURATION).wait()  # close on the cube
             self.attach(letter)  # the cube now keeps its place relative to the gripper
-            up = np.array([0.0, 0.0, LIFT_M])  # lift: same aim (+x), everything LIFT_M higher
+            up = np.array([0.0, 0.0, LIFT_M])  # lift: same aim (along approach), everything LIFT_M higher
             self._arm.move_ik(position + up, target=cube + up, pointing=True, straight=True, duration=LIFT_DURATION).wait()
-            back = np.array([-BACK_M, 0.0, 0.0])  # back up: same aim (+x), everything BACK_M further from the table
+            back = np.array([BACK_X - position[0], 0.0, 0.0])  # back up along -x: same aim, end effector to x = BACK_X
             self._arm.move_ik(position + up + back, target=cube + up + back, pointing=True, straight=True, duration=BACK_DURATION).wait()
             # the destination: the held cube goes where the cell centre `dest` is, so the end effector is where it was relative to the
-            # cube at the pick (CUBE_SIZE / 2 + TCP_OFFSET behind it along +x); the same line-up and straight approach as the reach,
-            # but PLACE_CLEARANCE higher, followed by a straight move down onto the stack
+            # cube at the pick (same approach, same _grasp_position); the same line-up and straight approach as the reach,
+            # but PLACE_CLEARANCE higher, followed by a straight move down onto the stack (or the table)
             dest = np.array(self._positions[dest_column][place_row])
-            ee = dest - np.array([CUBE_SIZE / 2 + TCP_OFFSET, 0.0, 0.0])
+            ee = self._grasp_position(dest, approach)
             above = np.array([0.0, 0.0, PLACE_CLEARANCE])  # arrive above the place, so the held cube does not scrape the stack top
             self._arm.move_ik(ee + above, target=dest + above, pointing=True, align=True, duration=TARGET_DURATION).wait()
             self._arm.move_ik(ee, target=dest, pointing=True, straight=True, duration=PLACE_LOWER_DURATION).wait()  # lower it onto the stack
@@ -268,7 +337,7 @@ class Experiment:
             self._arm.move_gripper_dist(OPEN_MM, GRIPPER_OPEN_FRACTION * TARGET_DURATION).wait()
             self._db[src_column][pick_row] = None  # the cube is now on top of the destination stack
             self._db[dest_column][place_row] = letter
-            retreat = np.array([-RETREAT_M, 0.0, 0.0])  # back away from the stack parallel to the x axis before leaving for observe
+            retreat = -RETREAT_M * approach  # back out the way the gripper came in (up the diagonal, or along -x) before observe
             self._arm.move_ik(ee + retreat, target=dest + retreat, pointing=True, straight=True, duration=RETREAT_DURATION).wait()
             self._go_observe()
         except RuntimeError:

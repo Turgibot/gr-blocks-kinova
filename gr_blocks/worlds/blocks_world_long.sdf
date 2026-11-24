@@ -24,7 +24,7 @@
         <material><diffuse>0.45 0.32 0.2 1</diffuse></material></visual></link></model>
 
     <model name="block_R">
-      <pose>1.0000 0.1200 0.3230 0 0 0</pose>
+      <pose>0.8500 0.1200 0.3230 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -34,7 +34,7 @@
       </link>
     </model>
     <model name="block_E">
-      <pose>1.0000 0.1200 0.3685 0 0 0</pose>
+      <pose>0.8500 0.1200 0.3685 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -44,7 +44,7 @@
       </link>
     </model>
     <model name="block_T">
-      <pose>1.0000 0.1200 0.4140 0 0 0</pose>
+      <pose>0.8500 0.1200 0.4140 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -54,7 +54,7 @@
       </link>
     </model>
     <model name="block_H">
-      <pose>1.0000 0.1200 0.4595 0 0 0</pose>
+      <pose>0.8500 0.1200 0.4595 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -64,7 +64,7 @@
       </link>
     </model>
     <model name="block_O">
-      <pose>1.0000 0.0000 0.3230 0 0 0</pose>
+      <pose>0.8500 0.0000 0.3230 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -74,7 +74,7 @@
       </link>
     </model>
     <model name="block_M">
-      <pose>1.0000 0.0000 0.3685 0 0 0</pose>
+      <pose>0.8500 0.0000 0.3685 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -84,7 +84,7 @@
       </link>
     </model>
     <model name="block_S">
-      <pose>1.0000 0.0000 0.4140 0 0 0</pose>
+      <pose>0.8500 0.0000 0.4140 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -94,7 +94,7 @@
       </link>
     </model>
     <model name="block_L">
-      <pose>1.0000 0.0000 0.4595 0 0 0</pose>
+      <pose>0.8500 0.0000 0.4595 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -104,7 +104,7 @@
       </link>
     </model>
     <model name="block_A">
-      <pose>1.0000 -0.1200 0.3230 0 0 0</pose>
+      <pose>0.8500 -0.1200 0.3230 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -114,7 +114,7 @@
       </link>
     </model>
     <model name="block_B">
-      <pose>1.0000 -0.1200 0.3685 0 0 0</pose>
+      <pose>0.8500 -0.1200 0.3685 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -124,7 +124,7 @@
       </link>
     </model>
     <model name="block_W">
-      <pose>1.0000 -0.1200 0.4140 0 0 0</pose>
+      <pose>0.8500 -0.1200 0.4140 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
@@ -134,7 +134,7 @@
       </link>
     </model>
     <model name="block_F">
-      <pose>1.0000 -0.1200 0.4595 0 0 0</pose>
+      <pose>0.8500 -0.1200 0.4595 0 0 0</pose>
       <link name="link">
         <inertial><mass>0.1</mass><inertia><ixx>3.375e-05</ixx><iyy>3.375e-05</iyy><izz>3.375e-05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <collision name="c"><geometry><box><size>0.045 0.045 0.045</size></box></geometry>
