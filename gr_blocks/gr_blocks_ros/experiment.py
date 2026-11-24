@@ -52,7 +52,9 @@ TARGET_DURATION = 4.0  # s, the arm's move from observe to a target
 GRIPPER_OPEN_FRACTION = 0.4  # the gripper opens within this fraction of TARGET_DURATION (it must finish before 50 %)
 CLOSE_MM = 52.0  # gripper opening when closed on a cube
 CLOSE_DURATION = 1.0  # s, closing the gripper on the cube
-TRANSIT_CLEARANCE = 0.05  # m, the held cube's bottom passes this far above the tallest column between source and destination
+TRANSIT_CLEARANCE = 0.05  # m, the held cube (and fingers) keep at least this distance from every cube on the way
+FINGER_MARGIN_Y = 0.02  # m, estimate: how far the closed fingers stick out past the held cube's sides (y), counted in the clearance
+DESCENT_SLOPE = 1.0  # dz/dy of the sideways descent after the tallest column (1.0 = 45 deg)
 TRANSIT_SPEED = 0.10  # m/s, lift, sideways move and descent (straight lines)
 MIN_MOVE_DURATION = 1.0  # s, shortest straight move
 PLACE_CLEARANCE = 0.02  # m, the held cube arrives this far above its place and is then lowered onto the stack
@@ -133,6 +135,7 @@ class Experiment:
         self._attach_pub = {letter: self._gz.advertise(f"/gr_blocks/attach/{letter}", Empty) for letter in letters}
         self._detach_pub = {letter: self._gz.advertise(f"/gr_blocks/detach/{letter}", Empty) for letter in letters}
         self._attached = None  # the letter of the cube attached to the gripper, if any
+        self._observe_pose = None  # (position, quaternion) of end_effector_link at observe, recorded in start()
         self._vocabulary = load_vocabulary()
         self._word = None  # chosen in start()
         self._arm = ArmMover()
@@ -210,6 +213,7 @@ class Experiment:
         word from the paper vocabulary (the goal). Returns the word, or None if the user pressed Esc."""
         self._add_table()
         self._go_observe()
+        self._observe_pose = self._ee_pose()  # where _return_to_observe goes back to, in a straight line
         self._reset_cubes()
         print("Pick a word:", ", ".join(self._vocabulary))
         while True:
@@ -301,12 +305,73 @@ class Experiment:
             return 0.0
         return FIRST_CUBE_Z + CUBE_SIZE / 2 + ROW_SPACING * (height - 1)
 
-    def _transit_z(self, src_column, dest_column):
-        """z of the held cube's centre while it travels sideways: its bottom TRANSIT_CLEARANCE above the tallest column from
-        `src_column` to `dest_column` (both included; the source counted without the held cube)."""
-        low, high = sorted((src_column, dest_column))
-        top = max(self._top_z(column, skip_top=column == src_column) for column in range(low, high + 1))
-        return top + TRANSIT_CLEARANCE + CUBE_SIZE / 2
+    @staticmethod
+    def _transit_profile(y_src, y_dest, columns):
+        """Sideways path of the held cube's centre as (y, z) corners, from above the source to above the destination.
+
+        columns: (y, z_required) of each column the cube passes, where z_required is the lowest cube-centre z that keeps it
+        TRANSIT_CLEARANCE above that column's top. A column counts while the held cube + fingers (half-width
+        CUBE_SIZE / 2 + FINGER_MARGIN_Y) are within TRANSIT_CLEARANCE of its footprint (half-width CUBE_SIZE / 2) in y.
+        The path starts at the highest requirement (the lift), never climbs (it follows the highest requirement still ahead),
+        and descends at DESCENT_SLOPE once the requirement ahead allows it: so it only comes down after the tallest column
+        is passed (with several equally tall columns, the last of them in the direction of travel, even across lower columns
+        in between), and every cube keeps at least TRANSIT_CLEARANCE vertically or horizontally.
+        """
+        reach = CUBE_SIZE / 2 + FINGER_MARGIN_Y + CUBE_SIZE / 2 + TRANSIT_CLEARANCE  # |y - y_column| below which a column counts
+        length = abs(y_dest - y_src)
+        sign = 1.0 if y_dest >= y_src else -1.0
+        s = np.linspace(0.0, length, max(2, int(round(length / 0.001)) + 1))  # 1 mm samples along the way
+        y = y_src + sign * s
+        need = np.full(s.shape, -np.inf)
+        for y_column, z_column in columns:
+            need = np.where(np.abs(y - y_column) < reach, np.maximum(need, z_column), need)
+        ahead = np.maximum.accumulate(need[::-1])[::-1]  # highest requirement from here to the destination: never climb
+        z = ahead.copy()
+        for i in range(1, len(s)):  # descend no steeper than DESCENT_SLOPE
+            z[i] = max(ahead[i], z[i - 1] - DESCENT_SLOPE * (s[i] - s[i - 1]))
+        corners = [0]  # the samples where the slope changes
+        for i in range(1, len(s) - 1):
+            if abs((z[i + 1] - z[i]) - (z[i] - z[i - 1])) > 1e-6:
+                corners.append(i)
+        corners.append(len(s) - 1)
+        # merge corners (the 1 mm sampling leaves 1 mm kinks): from each kept corner go straight to the furthest corner whose
+        # straight line stays above the requirement and within 3 mm of the path; each remaining corner is one straight move
+        kept = [0]
+        while kept[-1] != len(s) - 1:
+            start = kept[-1]
+            best = next(c for c in corners if c > start)
+            for c in corners:
+                if c <= best:
+                    continue
+                line = z[start] + (z[c] - z[start]) * (s[start:c + 1] - s[start]) / (s[c] - s[start])
+                if np.all(line >= ahead[start:c + 1] - 1e-9) and np.all(line <= z[start:c + 1] + 0.003):
+                    best = c
+            kept.append(best)
+        return [(float(y[i]), float(z[i])) for i in kept]
+
+
+    def _ee_pose(self):
+        """Current (position, quaternion x y z w) of end_effector_link in base_link, from TF."""
+        deadline = time.monotonic() + 5.0
+        while not self._arm._tf_buffer.can_transform("base_link", "end_effector_link", rclpy.time.Time()):
+            if time.monotonic() > deadline:
+                raise RuntimeError("no TF base_link -> end_effector_link")
+            time.sleep(0.05)
+        t = self._arm._tf_buffer.lookup_transform("base_link", "end_effector_link", rclpy.time.Time()).transform
+        return (np.array([t.translation.x, t.translation.y, t.translation.z]),
+                (t.rotation.x, t.rotation.y, t.rotation.z, t.rotation.w))
+
+    def _return_to_observe(self):
+        """Back to observe after a place: a straight line of the end effector to its pose at observe (recorded in start()),
+        not a joint move, so the gripper does not sweep through the stacks (MoveIt does not know the cubes, only the table).
+        The camera is on the last link, so the same end-effector pose gives the same view even if the joints differ a little."""
+        position, orientation = self._observe_pose
+        distance = np.linalg.norm(position - self._ee_pose()[0])
+        arm = self._arm.move_ik(position, orientation=orientation, pointing=False, straight=True,
+                                duration=max(MIN_MOVE_DURATION, distance / TRANSIT_SPEED))
+        gripper = self._arm.move_gripper_dist(OPEN_MM, 1.0)
+        arm.wait()
+        gripper.wait()
 
     def _straight(self, position, target, duration=None):
         """Straight line of the end effector to `position`, aiming at `target` (the aim keeps the orientation of the grasp);
@@ -320,9 +385,10 @@ class Experiment:
     def play(self, src_column, dest_column):
         """Test move: the arm reaches the top cube of `src_column` with the gripper open, closes the gripper (the cube is attached),
         lifts it straight up until its bottom is TRANSIT_CLEARANCE above the tallest column between source and destination,
-        moves sideways (along y, same height and orientation) above the destination, lowers it straight down onto the stack in
+        moves sideways (along y, same orientation) above the destination, coming down at DESCENT_SLOPE once the tallest column
+        is passed but always TRANSIT_CLEARANCE from every cube (_transit_profile), lowers it straight down onto the stack in
         `dest_column` (on the table if empty), releases the cube and opens the gripper, updates the db, backs up 10 cm along the
-        approach and goes back to observe.
+        approach and goes back to observe in a straight end-effector line (_return_to_observe, not a joint move).
 
         The approach is horizontal (+x), or diagonal (DIAGONAL_PITCH down) for the whole move when the pick or the place is on
         the table (row 0): the reach and the place then come down a diagonal from higher up, so the links stay off the table.
@@ -347,10 +413,15 @@ class Experiment:
             # cube at the pick (same approach, same _grasp_position). Every move below keeps the grasp's aim (orientation).
             dest = np.array(self._positions[dest_column][place_row])
             ee = self._grasp_position(dest, approach)
-            up = np.array([0.0, 0.0, self._transit_z(src_column, dest_column) - cube[2]])  # lift: cube centre to the transit height
-            self._straight(position + up, cube + up)  # straight up
-            side = np.array([0.0, 0.0, cube[2] + up[2] - dest[2]])  # the destination at the transit height
-            self._straight(ee + side, dest + side)  # sideways (the columns share x, so only y changes)
+            # the sideways path of the held cube's centre: lift straight up over the source, then sideways (y), coming down after
+            # the tallest column while keeping TRANSIT_CLEARANCE from every cube (see _transit_profile); one straight move per segment
+            low, high = sorted((src_column, dest_column))
+            columns = [(self._positions[c][0][1], self._top_z(c, skip_top=c == src_column) + TRANSIT_CLEARANCE + CUBE_SIZE / 2)
+                       for c in range(low, high + 1)]
+            grip = position - cube  # end effector relative to the held cube's centre: constant while it is held
+            for y, z in self._transit_profile(cube[1], dest[1], columns):
+                point = np.array([cube[0], y, z])
+                self._straight(point + grip, point)  # the first corner is straight above the source: the lift
             above = np.array([0.0, 0.0, PLACE_CLEARANCE])  # straight down to just above the place, then set it down slowly
             self._straight(ee + above, dest + above)
             self._straight(ee, dest, duration=PLACE_LOWER_DURATION)  # lower it onto the stack (or the table)
@@ -360,12 +431,12 @@ class Experiment:
             self._db[dest_column][place_row] = letter
             retreat = -RETREAT_M * approach  # back out the way the gripper came in (up the diagonal, or along -x) before observe
             self._arm.move_ik(ee + retreat, target=dest + retreat, pointing=True, straight=True, duration=RETREAT_DURATION).wait()
-            self._go_observe()
+            self._return_to_observe()
         except RuntimeError:
             if self._attached:  # a failed move must not leave a cube attached: it would block every later move
                 self.release(self._attached)
             try:
-                self._go_observe()
+                self._return_to_observe()
             except RuntimeError as error:
                 print(f"could not return to observe: {error}")
             raise
