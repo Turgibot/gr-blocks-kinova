@@ -32,11 +32,11 @@ from gr_blocks_ros.arm_mover import ArmMover
 COLUMNS = 9
 ROWS = 9
 
-# Where the cubes are, in base_link (m). From worlds/blocks_world_long.sdf: the towers stand at x = 0.85, columns 0.12 m apart
-# (column 3 at y = +0.12, 4 at y = 0, 5 at y = -0.12, so column c is at y = 0.12 * (4 - c)). The table top is z = 0 in
+# Where the cubes are, in base_link (m). From worlds/blocks_world_long.sdf: the towers stand at x = 0.85, columns 0.09 m apart
+# (column 3 at y = +0.09, 4 at y = 0, 5 at y = -0.09, so column c is at y = 0.09 * (4 - c)): a 4.5 cm gap between columns. The table top is z = 0 in
 # base_link; a cube is 0.045 m high and the cubes of a tower are 0.0455 m apart (0.0005 m gap), the first centre at z = 0.023.
 TOWER_X = 0.85  # was 1.0: at x >= 0.9 columns 0 and 8 (y = +-0.48) are out of reach at rows 0-1 (IK, 15 deg approach)
-COLUMN_SPACING = 0.12
+COLUMN_SPACING = 0.09  # m, cube 0.045 + gap 0.045
 FIRST_CUBE_Z = 0.023
 ROW_SPACING = 0.0455
 CUBE_SIZE = 0.045
@@ -47,7 +47,7 @@ TOWERS = ((3, "RETH"), (4, "OMSL"), (5, "ABWF"))
 WORLD = "blocks_world"  # Gazebo world name
 BASE_Z = 0.30  # m, height of base_link in the Gazebo world (the robot is spawned on the table top)
 
-OPEN_MM = 85.0  # gripper opening (contact-surface gap) while going to a target
+OPEN_MM = 70.0  # gripper opening (contact-surface gap) while going to a target
 TARGET_DURATION = 4.0  # s, the arm's move from observe to a target
 GRIPPER_OPEN_FRACTION = 0.4  # the gripper opens within this fraction of TARGET_DURATION (it must finish before 50 %)
 CLOSE_MM = 52.0  # gripper opening when closed on a cube
@@ -56,6 +56,8 @@ TRANSIT_CLEARANCE = 0.05  # m, the held cube (and fingers) keep at least this di
 FINGER_MARGIN_Y = 0.02  # m, estimate: how far the closed fingers stick out past the held cube's sides (y), counted in the clearance
 DESCENT_SLOPE = 1.0  # dz/dy of the sideways descent after the tallest column (1.0 = 45 deg)
 TRANSIT_SPEED = 0.10  # m/s, lift, sideways move and descent (straight lines)
+OBSERVE_SPEED = 1.25 * TRANSIT_SPEED  # m/s, the straight-line return to observe (25 % faster)
+OBSERVE_FK_DURATION = 2.4  # s, the joint move to observe at start (was 3.0; 25 % faster)
 MIN_MOVE_DURATION = 1.0  # s, shortest straight move
 PLACE_CLEARANCE = 0.02  # m, the held cube arrives this far above its place and is then lowered onto the stack
 PLACE_LOWER_DURATION = 1.0  # s
@@ -68,6 +70,10 @@ RETREAT_DURATION = 1.5  # s
 # 15 deg, not 45: at 45 deg the end effector sits ~5 cm further out and most cells are out of reach (no IK); at 15 deg every
 # cell is reachable with the table in the scene (lowest pad corner ~8 mm above the table at row 0).
 DIAGONAL_PITCH = np.radians(15.0)
+# Rows up to TILT_MAX_ROW get the tilted approach. Row 1 too: a level grasp there (end effector 7 cm above the table) has no IK
+# solution in the arm's usual configuration, so MoveIt answers with another one 3-4.6 rad away and the arm swings ("4 3" after
+# "4 5", "4 5"); tilted, the same moves stay within 0.56 rad.
+TILT_MAX_ROW = 1
 
 # The table for MoveIt (worlds/blocks_world_long.sdf: centre (0.5, 0, 0.15) in the world, 1.5 x 1.0 x 0.3 m; base_link is at
 # world z = 0.30, so the table top is z = 0 in base_link). The base_link mesh bottom is exactly at z = 0, so the MoveIt box is
@@ -123,7 +129,7 @@ class Experiment:
     def __init__(self):
         self._db = [[None] * ROWS for _ in range(COLUMNS)]  # db[column][row]
         # The three towers of worlds/blocks_world_long.sdf, bottom to top. Columns count from the left as the robot sees
-        # the table (the robot faces +x, so its left is +y): column 3 is the tower at y = +0.12, 4 at y = 0, 5 at y = -0.12.
+        # the table (the robot faces +x, so its left is +y): column 3 is the tower at y = +0.09, 4 at y = 0, 5 at y = -0.09.
         for column, tower in TOWERS:
             for row, letter in enumerate(tower):
                 self._db[column][row] = letter
@@ -186,7 +192,7 @@ class Experiment:
         (it is never fully closed)."""
         with open(os.path.join(get_package_share_directory("gr_blocks_ros"), "config", "poses.json")) as f:
             observe = json.load(f)["observe"]
-        arm = self._arm.move_fk(observe, 3.0)
+        arm = self._arm.move_fk(observe, OBSERVE_FK_DURATION)
         gripper = self._arm.move_gripper_dist(OPEN_MM, 1.0)
         arm.wait()
         gripper.wait()
@@ -368,7 +374,7 @@ class Experiment:
         position, orientation = self._observe_pose
         distance = np.linalg.norm(position - self._ee_pose()[0])
         arm = self._arm.move_ik(position, orientation=orientation, pointing=False, straight=True,
-                                duration=max(MIN_MOVE_DURATION, distance / TRANSIT_SPEED))
+                                duration=max(MIN_MOVE_DURATION, distance / OBSERVE_SPEED))
         gripper = self._arm.move_gripper_dist(OPEN_MM, 1.0)
         arm.wait()
         gripper.wait()
@@ -391,7 +397,8 @@ class Experiment:
         approach and goes back to observe in a straight end-effector line (_return_to_observe, not a joint move).
 
         The approach is horizontal (+x), or diagonal (DIAGONAL_PITCH down) for the whole move when the pick or the place is on
-        the table (row 0): the reach and the place then come down a diagonal from higher up, so the links stay off the table.
+        the table or just above it (row <= TILT_MAX_ROW): the reach and the place then come down a diagonal from higher up, so
+        the links stay off the table.
 
         The gripper opens on the way to the cube (see _reach) and stays open (OPEN_MM): the move ends at observe with the arm
         and gripper as every move starts. If the move fails, a cube that is attached is released and the arm goes back to observe before the error is raised.
@@ -405,7 +412,7 @@ class Experiment:
             pick_row = self._height(src_column) - 1
             letter = self._db[src_column][pick_row]
             cube = np.array(self._positions[src_column][self._height(src_column) - 1])
-            approach = self._approach(diagonal=pick_row == 0 or place_row == 0)
+            approach = self._approach(diagonal=min(pick_row, place_row) <= TILT_MAX_ROW)
             position = self._reach(cube, approach)
             self._arm.move_gripper_dist(CLOSE_MM, CLOSE_DURATION).wait()  # close on the cube
             self.attach(letter)  # the cube now keeps its place relative to the gripper
@@ -415,9 +422,11 @@ class Experiment:
             ee = self._grasp_position(dest, approach)
             # the sideways path of the held cube's centre: lift straight up over the source, then sideways (y), coming down after
             # the tallest column while keeping TRANSIT_CLEARANCE from every cube (see _transit_profile); one straight move per segment
+            # the columns from source to destination, plus the one just outside each end: with COLUMN_SPACING (0.09) below the
+            # clearance reach (0.115, see _transit_profile) those neighbours are also within 5 cm of the path near its ends
             low, high = sorted((src_column, dest_column))
             columns = [(self._positions[c][0][1], self._top_z(c, skip_top=c == src_column) + TRANSIT_CLEARANCE + CUBE_SIZE / 2)
-                       for c in range(low, high + 1)]
+                       for c in range(max(0, low - 1), min(COLUMNS - 1, high + 1) + 1)]
             grip = position - cube  # end effector relative to the held cube's centre: constant while it is held
             for y, z in self._transit_profile(cube[1], dest[1], columns):
                 point = np.array([cube[0], y, z])
