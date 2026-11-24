@@ -52,16 +52,13 @@ TARGET_DURATION = 4.0  # s, the arm's move from observe to a target
 GRIPPER_OPEN_FRACTION = 0.4  # the gripper opens within this fraction of TARGET_DURATION (it must finish before 50 %)
 CLOSE_MM = 52.0  # gripper opening when closed on a cube
 CLOSE_DURATION = 1.0  # s, closing the gripper on the cube
-LIFT_M = 0.10  # m, lift after closing on the cube
-LIFT_DURATION = 2.0  # s
+TRANSIT_CLEARANCE = 0.05  # m, the held cube's bottom passes this far above the tallest column between source and destination
+TRANSIT_SPEED = 0.10  # m/s, lift, sideways move and descent (straight lines)
+MIN_MOVE_DURATION = 1.0  # s, shortest straight move
 PLACE_CLEARANCE = 0.02  # m, the held cube arrives this far above its place and is then lowered onto the stack
 PLACE_LOWER_DURATION = 1.0  # s
 RETREAT_M = 0.10  # m, after releasing: straight back along -x, then to observe
 RETREAT_DURATION = 1.5  # s
-# After the lift the arm backs away from the table (-x) until end_effector_link is at x = BACK_X. A fixed distance broke when
-# the towers moved from x = 1.0 to 0.85: 30 cm back then ends at x = 0.35, against the base (straight line 87-97 % feasible).
-BACK_X = 0.50  # m, where the 30 cm back-up ended with the towers at x = 1.0
-BACK_DURATION = 3.0  # s
 
 # A move whose pick or place is on the table (row 0) reaches with the approach axis tilted DIAGONAL_PITCH down from +x, for the
 # whole move (pick and place): the cube is welded to the gripper, so it must be put down at the same tilt it was picked at,
@@ -297,10 +294,35 @@ class Experiment:
         gripper.wait()
         return position
 
+    def _top_z(self, column, skip_top=False):
+        """z of the top of `column`'s stack (0 = the table when it is empty); skip_top: without its top cube (the one held)."""
+        height = self._height(column) - (1 if skip_top else 0)
+        if height <= 0:
+            return 0.0
+        return FIRST_CUBE_Z + CUBE_SIZE / 2 + ROW_SPACING * (height - 1)
+
+    def _transit_z(self, src_column, dest_column):
+        """z of the held cube's centre while it travels sideways: its bottom TRANSIT_CLEARANCE above the tallest column from
+        `src_column` to `dest_column` (both included; the source counted without the held cube)."""
+        low, high = sorted((src_column, dest_column))
+        top = max(self._top_z(column, skip_top=column == src_column) for column in range(low, high + 1))
+        return top + TRANSIT_CLEARANCE + CUBE_SIZE / 2
+
+    def _straight(self, position, target, duration=None):
+        """Straight line of the end effector to `position`, aiming at `target` (the aim keeps the orientation of the grasp);
+        timed at TRANSIT_SPEED unless `duration` is given. Waits for it."""
+        if duration is None:
+            now = self._arm._tf_buffer.lookup_transform("base_link", "end_effector_link", rclpy.time.Time()).transform.translation
+            distance = np.linalg.norm(np.asarray(position) - [now.x, now.y, now.z])
+            duration = max(MIN_MOVE_DURATION, distance / TRANSIT_SPEED)
+        self._arm.move_ik(position, target=target, pointing=True, straight=True, duration=duration).wait()
+
     def play(self, src_column, dest_column):
         """Test move: the arm reaches the top cube of `src_column` with the gripper open, closes the gripper (the cube is attached),
-        lifts 10 cm, backs up 30 cm, reaches the place for it on top of the stack in `dest_column` (on the table if empty) with the
-        cube held, releases the cube and opens the gripper, updates the db, backs up 10 cm along the approach and goes back to observe.
+        lifts it straight up until its bottom is TRANSIT_CLEARANCE above the tallest column between source and destination,
+        moves sideways (along y, same height and orientation) above the destination, lowers it straight down onto the stack in
+        `dest_column` (on the table if empty), releases the cube and opens the gripper, updates the db, backs up 10 cm along the
+        approach and goes back to observe.
 
         The approach is horizontal (+x), or diagonal (DIAGONAL_PITCH down) for the whole move when the pick or the place is on
         the table (row 0): the reach and the place then come down a diagonal from higher up, so the links stay off the table.
@@ -321,18 +343,17 @@ class Experiment:
             position = self._reach(cube, approach)
             self._arm.move_gripper_dist(CLOSE_MM, CLOSE_DURATION).wait()  # close on the cube
             self.attach(letter)  # the cube now keeps its place relative to the gripper
-            up = np.array([0.0, 0.0, LIFT_M])  # lift: same aim (along approach), everything LIFT_M higher
-            self._arm.move_ik(position + up, target=cube + up, pointing=True, straight=True, duration=LIFT_DURATION).wait()
-            back = np.array([BACK_X - position[0], 0.0, 0.0])  # back up along -x: same aim, end effector to x = BACK_X
-            self._arm.move_ik(position + up + back, target=cube + up + back, pointing=True, straight=True, duration=BACK_DURATION).wait()
             # the destination: the held cube goes where the cell centre `dest` is, so the end effector is where it was relative to the
-            # cube at the pick (same approach, same _grasp_position); the same line-up and straight approach as the reach,
-            # but PLACE_CLEARANCE higher, followed by a straight move down onto the stack (or the table)
+            # cube at the pick (same approach, same _grasp_position). Every move below keeps the grasp's aim (orientation).
             dest = np.array(self._positions[dest_column][place_row])
             ee = self._grasp_position(dest, approach)
-            above = np.array([0.0, 0.0, PLACE_CLEARANCE])  # arrive above the place, so the held cube does not scrape the stack top
-            self._arm.move_ik(ee + above, target=dest + above, pointing=True, align=True, duration=TARGET_DURATION).wait()
-            self._arm.move_ik(ee, target=dest, pointing=True, straight=True, duration=PLACE_LOWER_DURATION).wait()  # lower it onto the stack
+            up = np.array([0.0, 0.0, self._transit_z(src_column, dest_column) - cube[2]])  # lift: cube centre to the transit height
+            self._straight(position + up, cube + up)  # straight up
+            side = np.array([0.0, 0.0, cube[2] + up[2] - dest[2]])  # the destination at the transit height
+            self._straight(ee + side, dest + side)  # sideways (the columns share x, so only y changes)
+            above = np.array([0.0, 0.0, PLACE_CLEARANCE])  # straight down to just above the place, then set it down slowly
+            self._straight(ee + above, dest + above)
+            self._straight(ee, dest, duration=PLACE_LOWER_DURATION)  # lower it onto the stack (or the table)
             self.release(letter)  # undo the attach just before opening the gripper: the cube stays on the stack
             self._arm.move_gripper_dist(OPEN_MM, GRIPPER_OPEN_FRACTION * TARGET_DURATION).wait()
             self._db[src_column][pick_row] = None  # the cube is now on top of the destination stack
