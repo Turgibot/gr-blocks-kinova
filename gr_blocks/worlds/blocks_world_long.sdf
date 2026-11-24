@@ -23,6 +23,12 @@
       <visual name="v"><geometry><box><size>1.500 1.000 0.3</size></box></geometry>
         <material><diffuse>0.45 0.32 0.2 1</diffuse></material></visual></link></model>
 
+    <!-- riser under the robot base: 5.8 cm high (top at z = 0.358, where gr_blocks.launch.py spawns the base); 0.20 x 0.20 m footprint assumed -->
+    <model name="ramp"><static>true</static><pose>0 0 0.329 0 0 0</pose><link name="link">
+      <collision name="c"><geometry><box><size>0.200 0.200 0.058</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.200 0.200 0.058</size></box></geometry>
+        <material><diffuse>0.25 0.25 0.25 1</diffuse></material></visual></link></model>
+
     <model name="block_R">
       <pose>0.8500 0.0900 0.3230 0 0 0</pose>
       <link name="link">

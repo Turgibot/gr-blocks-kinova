@@ -33,11 +33,14 @@ COLUMNS = 9
 ROWS = 9
 
 # Where the cubes are, in base_link (m). From worlds/blocks_world_long.sdf: the towers stand at x = 0.85, columns 0.09 m apart
-# (column 3 at y = +0.09, 4 at y = 0, 5 at y = -0.09, so column c is at y = 0.09 * (4 - c)): a 4.5 cm gap between columns. The table top is z = 0 in
-# base_link; a cube is 0.045 m high and the cubes of a tower are 0.0455 m apart (0.0005 m gap), the first centre at z = 0.023.
+# (column 3 at y = +0.09, 4 at y = 0, 5 at y = -0.09, so column c is at y = 0.09 * (4 - c)): a 4.5 cm gap between columns. The base stands on a
+# RAMP_HEIGHT riser, so the table top is z = TABLE_Z (-0.058) in base_link; a cube is 0.045 m high and the cubes of a tower
+# are 0.0455 m apart (0.0005 m gap), the first centre FIRST_CUBE_Z = 0.023 above the table top.
+RAMP_HEIGHT = 0.058  # m, the riser plate under the robot base (worlds/blocks_world_long.sdf model `ramp`)
+TABLE_Z = -RAMP_HEIGHT  # m, the table top in base_link
 TOWER_X = 0.85  # was 1.0: at x >= 0.9 columns 0 and 8 (y = +-0.48) are out of reach at rows 0-1 (IK, 15 deg approach)
 COLUMN_SPACING = 0.09  # m, cube 0.045 + gap 0.045
-FIRST_CUBE_Z = 0.023
+FIRST_CUBE_Z = 0.023  # m, above the table top
 ROW_SPACING = 0.0455
 CUBE_SIZE = 0.045
 TCP_OFFSET = 0.177  # m, from end_effector_link along its approach axis to the finger pads (URDF)
@@ -45,7 +48,7 @@ TCP_OFFSET = 0.177  # m, from end_effector_link along its approach axis to the f
 # The three towers at the start, bottom to top, by column (worlds/blocks_world_long.sdf); each letter is the model block_<letter>.
 TOWERS = ((3, "RETH"), (4, "OMSL"), (5, "ABWF"))
 WORLD = "blocks_world"  # Gazebo world name
-BASE_Z = 0.30  # m, height of base_link in the Gazebo world (the robot is spawned on the table top)
+BASE_Z = 0.30 + RAMP_HEIGHT  # m, height of base_link in the Gazebo world (table top 0.30 + the riser; gr_blocks.launch.py spawn z)
 
 OPEN_MM = 70.0  # gripper opening (contact-surface gap) while going to a target
 TARGET_DURATION = 4.0  # s, the arm's move from observe to a target
@@ -75,12 +78,14 @@ DIAGONAL_PITCH = np.radians(15.0)
 # "4 5", "4 5"); tilted, the same moves stay within 0.56 rad.
 TILT_MAX_ROW = 1
 
-# The table for MoveIt (worlds/blocks_world_long.sdf: centre (0.5, 0, 0.15) in the world, 1.5 x 1.0 x 0.3 m; base_link is at
-# world z = 0.30, so the table top is z = 0 in base_link). The base_link mesh bottom is exactly at z = 0, so the MoveIt box is
-# TABLE_GAP lower, or the robot would start in collision. With it, IK, joint plans and straight lines all avoid the table.
-TABLE_CENTER = (0.5, 0.0, -0.15)
+# The table and the riser for MoveIt (worlds/blocks_world_long.sdf: table centre (0.5, 0, 0.15) in the world, 1.5 x 1.0 x 0.3 m;
+# base_link is at world z = 0.30 + RAMP_HEIGHT, so the table top is z = TABLE_Z in base_link). The riser (RAMP_SIZE, centred
+# under the base) carries the base: the base_link mesh bottom is exactly at z = 0, so the MoveIt riser box is TABLE_GAP lower,
+# or the robot would start in collision. With them, IK, joint plans and straight lines all avoid the table and the riser.
+TABLE_CENTER = (0.5, 0.0, TABLE_Z - 0.15)
 TABLE_SIZE = (1.5, 1.0, 0.3)
 TABLE_GAP = 0.002  # m
+RAMP_SIZE = (0.20, 0.20, RAMP_HEIGHT)  # m, assumed footprint (the real riser's size is not recorded)
 
 
 def load_vocabulary():
@@ -134,7 +139,7 @@ class Experiment:
             for row, letter in enumerate(tower):
                 self._db[column][row] = letter
         # positions[column][row] = (x, y, z) of the centre of a cube at that cell, in base_link (not joint angles)
-        self._positions = [[(TOWER_X, COLUMN_SPACING * (4 - column), FIRST_CUBE_Z + ROW_SPACING * row)
+        self._positions = [[(TOWER_X, COLUMN_SPACING * (4 - column), TABLE_Z + FIRST_CUBE_Z + ROW_SPACING * row)
                             for row in range(ROWS)] for column in range(COLUMNS)]
         self._gz = GzNode()  # sim only: the attach / detach topics of the cubes' DetachableJoint plugins (see attach)
         letters = [letter for _, tower in TOWERS for letter in tower]
@@ -165,19 +170,23 @@ class Experiment:
         self._attached = None
 
     def _add_table(self):
-        """Put the table into MoveIt's planning scene as a collision box (see TABLE_CENTER), so no move goes through it."""
+        """Put the table and the riser under the base into MoveIt's planning scene as collision boxes (see TABLE_CENTER),
+        so no move goes through them."""
         client = self._arm.create_client(ApplyPlanningScene, "/apply_planning_scene")
         if not client.wait_for_service(timeout_sec=10.0):
             raise RuntimeError("no /apply_planning_scene: is move_group running (moveit true in gr_blocks.json)?")
-        box = SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[float(v) for v in TABLE_SIZE])
-        pose = Pose()
-        pose.position.x, pose.position.y = (float(v) for v in TABLE_CENTER[:2])
-        pose.position.z = float(TABLE_CENTER[2] - TABLE_GAP)
-        pose.orientation.w = 1.0
-        table = CollisionObject(id="table", operation=CollisionObject.ADD, primitives=[box], primitive_poses=[pose])
-        table.header.frame_id = "base_link"
+        objects = []
+        for name, size, center in (("table", TABLE_SIZE, TABLE_CENTER),
+                                   ("ramp", RAMP_SIZE, (0.0, 0.0, -RAMP_HEIGHT / 2 - TABLE_GAP))):
+            box = SolidPrimitive(type=SolidPrimitive.BOX, dimensions=[float(v) for v in size])
+            pose = Pose()
+            pose.position.x, pose.position.y, pose.position.z = (float(v) for v in center)
+            pose.orientation.w = 1.0
+            obj = CollisionObject(id=name, operation=CollisionObject.ADD, primitives=[box], primitive_poses=[pose])
+            obj.header.frame_id = "base_link"
+            objects.append(obj)
         scene = PlanningScene(is_diff=True)
-        scene.world.collision_objects = [table]
+        scene.world.collision_objects = objects
         future = client.call_async(ApplyPlanningScene.Request(scene=scene))  # ArmMover spins in its own thread
         deadline = time.monotonic() + 10.0
         while not future.done():
@@ -185,7 +194,7 @@ class Experiment:
                 raise RuntimeError("/apply_planning_scene did not answer")
             time.sleep(0.05)
         if not future.result().success:
-            raise RuntimeError("MoveIt did not accept the table collision object")
+            raise RuntimeError("MoveIt did not accept the table / riser collision objects")
 
     def _go_observe(self):
         """Every move starts and ends here: the arm at the `observe` pose (config/poses.json), the gripper open to OPEN_MM
@@ -305,11 +314,11 @@ class Experiment:
         return position
 
     def _top_z(self, column, skip_top=False):
-        """z of the top of `column`'s stack (0 = the table when it is empty); skip_top: without its top cube (the one held)."""
+        """z of the top of `column`'s stack (TABLE_Z when it is empty); skip_top: without its top cube (the one held)."""
         height = self._height(column) - (1 if skip_top else 0)
         if height <= 0:
-            return 0.0
-        return FIRST_CUBE_Z + CUBE_SIZE / 2 + ROW_SPACING * (height - 1)
+            return TABLE_Z
+        return TABLE_Z + FIRST_CUBE_Z + CUBE_SIZE / 2 + ROW_SPACING * (height - 1)
 
     @staticmethod
     def _transit_profile(y_src, y_dest, columns):

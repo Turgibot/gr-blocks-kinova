@@ -234,8 +234,8 @@ def launch_setup(context):
         package="ros_gz_sim",
         executable="create",
         output="screen",
-        # base on the table top (z = 0.30), as in the existing launch
-        arguments=["-string", robot_description, "-name", "gen3", "-x", "0.0", "-y", "0.0", "-z", "0.3"],
+        # base on the 5.8 cm riser (model `ramp` in blocks_world_long.sdf) on the table top (z = 0.30): 0.30 + 0.058
+        arguments=["-string", robot_description, "-name", "gen3", "-x", "0.0", "-y", "0.0", "-z", "0.358"],
     )
     clock_bridge = Node(
         package="ros_gz_bridge",
