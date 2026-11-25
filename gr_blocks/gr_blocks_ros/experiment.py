@@ -90,11 +90,23 @@ TABLE_SIZE = (1.5, 1.0, 0.3)
 TABLE_GAP = 0.002  # m
 RAMP_SIZE = (0.20, 0.20, RAMP_HEIGHT)  # m, assumed footprint (the real riser's size is not recorded)
 
+# Score: each pick and place is one move. A word built in its minimal number of moves (from the starting towers) scores
+# MAX_SCORE; every move beyond the minimum takes one point off, down to 0:  score = max(0, MAX_SCORE - max(0, moves - minimum)).
+MAX_SCORE = 10
+
 
 def load_vocabulary():
-    """The words of the paper (the goals in data/blockworld.json), e.g. HER, MOTHER, MASTER."""
+    """The words of the paper (the goals in data/blockworld.json), e.g. HER, MOTHER, MASTER, each with its minimal number of
+    pick-and-place moves from the starting towers: {word: minimum}. The paper's cost_one_agent counts the classical actions
+    (pick-up/unstack + put-down/stack), two per pick and place, so minimum = cost_one_agent / 2 (HER: 6 -> 3). Checked against
+    an A* search over the board for all 12 words."""
     with open(os.path.join(get_package_share_directory("gr_blocks_ros"), "data", "blockworld.json")) as f:
-        return list(json.load(f)["goals"])
+        return {word: cost["cost_one_agent"] // 2 for word, cost in json.load(f)["goals"].items()}
+
+
+def score(moves, minimum):
+    """MAX_SCORE for a word built in `minimum` moves, one point less per extra move, never below 0."""
+    return max(0, MAX_SCORE - max(0, moves - minimum))
 
 
 def read_line(prompt):
@@ -148,6 +160,7 @@ class Experiment:
         self._observe_pose = None  # (position, quaternion) of end_effector_link at observe, recorded in start()
         self._vocabulary = load_vocabulary()
         self._word = None  # chosen in start()
+        self._moves = 0  # pick and places done since the word was chosen
         self._arm = ArmMover()
 
     def attach(self, cube):
@@ -263,7 +276,7 @@ class Experiment:
         self._observe_pose = self._with_retry("recording the observe pose", self._ee_pose)
         print("[start] ready", flush=True)
         while True:
-            print("Pick a word:", ", ".join(self._vocabulary))
+            print("Pick a word (minimal moves):", ", ".join(f"{w} ({n})" for w, n in self._vocabulary.items()))
             print("or r to reset the cubes to the starting towers")
             line = read_line("word / r (Esc to exit)> ")
             if line is None:
@@ -276,6 +289,8 @@ class Experiment:
                 continue
             if word in self._vocabulary:
                 self._word = word
+                self._moves = 0
+                print(f"{word}: minimum {self._vocabulary[word]} moves for {MAX_SCORE} points, one point less per extra move")
                 return word
             print(f"{word!r} is not in the vocabulary")
 
@@ -485,6 +500,7 @@ class Experiment:
             self._arm.move_gripper_dist(OPEN_MM, GRIPPER_OPEN_FRACTION * TARGET_DURATION).wait()
             self._db[src_column][pick_row] = None  # the cube is now on top of the destination stack
             self._db[dest_column][place_row] = letter
+            self._moves += 1  # a pick and place is done once the cube is on its new place
             retreat = -RETREAT_M * approach  # back out the way the gripper came in (up the diagonal, or along -x) before observe
             self._arm.move_ik(ee + retreat, target=dest + retreat, pointing=True, straight=True, duration=RETREAT_DURATION).wait()
             self._return_to_observe()
@@ -517,9 +533,12 @@ def main():
             experiment.play(*move)
         except (RuntimeError, ValueError) as error:  # e.g. no IK solution (out of reach), empty source column
             print(f"move failed: {error}")
+        minimum = experiment._vocabulary[experiment._word]
+        print(f"moves: {experiment._moves} (minimum {minimum})")
         if experiment.is_done():  # the word is created in one of the columns
             experiment.show_board()
-            print(f"{experiment._word} is built. Game over.")
+            print(f"{experiment._word} is built in {experiment._moves} moves (minimum {minimum}). "
+                  f"Score: {score(experiment._moves, minimum)} / {MAX_SCORE}. Game over.")
             break
 
 
